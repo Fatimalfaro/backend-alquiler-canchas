@@ -46,3 +46,16 @@ export const borrarProductoPorID = async (req, res) => {
         res.status(500).json({ message: 'Ocurrio un error al intentar borrar un producto por id' });
     }
 }
+
+export const editarProductoPorID = async (req, res) => {
+    try {
+        const productoEditado = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!productoEditado) {
+            return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
+        }
+        res.status(200).json({ message: 'El producto se actualizo correctamente', producto: productoEditado });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ocurrio un error al intentar editar un producto por id' });
+    }
+}
