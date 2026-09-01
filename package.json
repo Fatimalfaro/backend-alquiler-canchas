@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "dev": "node --env-file .env--watch index"
+    "dev": "node --env-file .env --watch index"
   },
   "keywords": [],
   "author": "Fátima Alfaro, Angel Nader, Judith Bertolini, Jesús Abel Almaraz, Valentin Gonzalez, Patti",
