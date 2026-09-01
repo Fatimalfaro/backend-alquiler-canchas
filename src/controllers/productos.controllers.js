@@ -20,3 +20,17 @@ export const listarProductos = async (req, res) => {
         res.status(500).json({ message: 'Ocurrio un error al intentar listar los productos' });
     }
 }
+
+export const buscarProductoPorID = async (req, res) => {
+    try {
+        console.log(req.params.id);
+        const productoBuscado = await Producto.findById(req.params.id);
+        if (!productoBuscado) {
+            return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
+        }
+        res.status(200).json(productoBuscado);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ocurrio un error al intentar buscar un producto por id' });
+    }
+}
