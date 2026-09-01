@@ -24,6 +24,11 @@ const reglasProducto = [
 
 export const validacionProducto = [...reglasProducto.map((regla) => regla.notEmpty().withMessage("Este campo es un datoobligatorio")), resultadoValidacion];
 
+export const validacionPatchProducto = [
+    ...reglasProducto.map((regla)=>regla.optional({values: 'falsy'})), resultadoValidacion
+]
+
+
 export const validacionIDProducto = [
     param('id').isMongoId().withMessage("El ID enviado no tiene el formato de ID de MongoDB"), resultadoValidacion
 ]
