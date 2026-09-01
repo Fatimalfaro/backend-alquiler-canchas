@@ -23,7 +23,6 @@ export const listarProductos = async (req, res) => {
 
 export const buscarProductoPorID = async (req, res) => {
     try {
-        console.log(req.params.id);
         const productoBuscado = await Producto.findById(req.params.id);
         if (!productoBuscado) {
             return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
@@ -32,5 +31,18 @@ export const buscarProductoPorID = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Ocurrio un error al intentar buscar un producto por id' });
+    }
+}
+
+export const borrarProductoPorID = async (req, res) => {
+    try {
+        const productoBorrado = await Producto.findByIdAndDelete(req.params.id);
+        if (!productoBorrado) {
+            return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
+        }
+        res.status(200).json({ message: 'El producto se elimino correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ocurrio un error al intentar borrar un producto por id' });
     }
 }
