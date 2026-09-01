@@ -1,0 +1,15 @@
+{
+  "name": "backend-alquiler-canchas",
+  "version": "1.0.0",
+  "description": "Backend de la aplicacion de alquiler de canchas",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "dev": "node --watch index"
+  },
+  "keywords": [],
+  "author": "Fátima Alfaro, Angel Nader, Judith Bertolini, Jesús Abel Almaraz, Valentin Gonzalez, Patti",
+  "license": "ISC",
+  "packageManager": "pnpm@11.5.2",
+  "type": "module"
+}
