@@ -1,4 +1,4 @@
-import {body} from "express-validator";
+import {body, param} from "express-validator";
 import resultadoValidacion from "./resultadoValidacion.js";
 
 export const validacionProducto = [
@@ -27,4 +27,8 @@ export const validacionProducto = [
         .isIn(["Indumentaria deportiva", "Calzado", "Accesorios deportivos", "Pelotas", "Bebidas", "Snacks"]).withMessage("La categoría debe ser una de las opciones válidas"),
         
         resultadoValidacion
+]
+
+export const validacionIDProducto = [
+    param('id').isMongoId().withMessage("El ID enviado no tiene el formato de ID de MongoDB"), resultadoValidacion
 ]
