@@ -31,9 +31,9 @@ const productoSchema = new Schema({
 
   },
   categoria:{
-    type: String,
-    required: true,
-    enum: ["Indumentaria deportiva", "Calzado", "Accesorios deportivos", "Pelotas", "Bebidas", "Snacks"]
+    type: Schema.Types.ObjectId,
+    ref: "categoria",
+    required: true
   }
 },
 {
