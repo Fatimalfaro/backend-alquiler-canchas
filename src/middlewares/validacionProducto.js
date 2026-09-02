@@ -19,7 +19,7 @@ const reglasProducto = [
     
     body("categoria")
         .isString().withMessage("La categoría debe ser un texto")
-        .isIn(["Indumentaria deportiva", "Calzado", "Accesorios deportivos", "Pelotas", "Bebidas", "Snacks"]).withMessage("La categoría debe ser una de las opciones válidas"),
+        .isMongoId().withMessage("La categoría debe ser un ID de MongoDB válido")
 ]
 
 export const validacionProducto = [...reglasProducto.map((regla) => regla.notEmpty().withMessage("Este campo es un datoobligatorio")), resultadoValidacion];
