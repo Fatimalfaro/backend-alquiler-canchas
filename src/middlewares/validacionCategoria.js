@@ -16,7 +16,15 @@ export const validacionCategoria = [
 export const validacionIDCategoria = [
     param("id")
         .isMongoId()
-        .withMessage("El ID enviado no tiene el formato de ID de MongoDB"),
+        .withMessage("El ID enviado no tiene el formato de ID de MongoDB")
+        .bail()
+        .custom(async (id) => {
+            const categoriaExiste = await Categoria.findById(id);
+            if (!categoriaExiste) {
+                throw new Error("La categoria seleccionada no existe");
+            }
+            return true;
+        }),
 
     resultadoValidacion
 ];
