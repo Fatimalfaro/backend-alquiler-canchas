@@ -13,7 +13,7 @@ export const agregarProducto = async (req, res) => {
 
 export const listarProductos = async (req, res) => {
     try {
-        const productos = await Producto.find();
+        const productos = await Producto.find().populate("categoria", "nombreCategoria");
         res.status(200).json(productos);
     } catch (error) {
         console.error(error);
