@@ -133,3 +133,79 @@ export const verificarEmail = async (req, res) => {
     });
   }
 };
+export const reenviarCodigoVerificacion = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        mensaje: "El email es obligatorio",
+      });
+    }
+
+    const emailNormalizado = email.toLowerCase().trim();
+
+    const usuario = await Usuario.findOne({
+      email: emailNormalizado,
+    });
+
+    if (!usuario) {
+      return res.status(404).json({
+        mensaje: "Usuario no encontrado",
+      });
+    }
+
+    if (usuario.emailVerificado) {
+      return res.status(400).json({
+        mensaje: "El email ya está verificado",
+      });
+    }
+
+   
+    if (usuario.ultimoCodigoEnviado) {
+      const segundosTranscurridos =
+        (Date.now() - usuario.ultimoCodigoEnviado.getTime()) / 1000;
+
+      if (segundosTranscurridos < 60) {
+        const segundosRestantes = Math.ceil(
+          60 - segundosTranscurridos
+        );
+
+        return res.status(429).json({
+          mensaje: `Debes esperar ${segundosRestantes} segundos para solicitar otro código`,
+        });
+      }
+    }
+
+ 
+    const codigoVerificacion = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+  
+    const codigoVerificacionExpira = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
+
+    usuario.codigoVerificacion = codigoVerificacion;
+    usuario.codigoVerificacionExpira = codigoVerificacionExpira;
+    usuario.ultimoCodigoEnviado = new Date();
+
+    await usuario.save();
+
+    await enviarCodigoVerificacion(
+      usuario.email,
+      codigoVerificacion
+    );
+
+    return res.status(200).json({
+      mensaje: "Se envió un nuevo código de verificación",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensaje: "Error al reenviar el código de verificación",
+    });
+  }
+};
