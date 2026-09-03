@@ -68,7 +68,7 @@ const usuarioSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Usuario", usuarioSchema);
