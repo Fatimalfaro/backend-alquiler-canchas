@@ -60,3 +60,31 @@ export const vaciarCarrito = async (req, res) => {
         res.status(500).json({ mensaje: 'Ocurrio un error al intentar vaciar el carrito'});
     }
 }
+
+export const restarCantidadProducto = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id
+        const { productoId } = req.params
+
+        const carrito = await buscarOcrearCarrito(usuarioId);
+        const itemIndex = carrito.items.findIndex((item) => item.producto.toString() === productoId);
+
+        if (itemIndex === -1) {
+            return res.status(404).json({ mensaje: 'Producto no encontrado en el carrito' });
+        } 
+        
+        carrito.items[itemIndex].cantidad -= 1
+        
+        if(carrito.items[itemIndex].cantidad <= 0){
+        carrito.items.splice(itemIndex, 1)
+       }
+
+      await carrito.save() 
+      await carrito.populate('items.producto', 'nombreProducto precio imagen')
+      res.status(200).json({mensaje: 'Cantidad actualizada correctamente', carrito})
+
+    }catch(error){
+        console.error(error);
+        res.status(500).json({ mensaje: 'Ocurrio un error al intentar restar la cantidad de un producto del carrito'});
+    }
+}
