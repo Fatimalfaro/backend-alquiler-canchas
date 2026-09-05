@@ -88,3 +88,21 @@ export const restarCantidadProducto = async (req, res) => {
         res.status(500).json({ mensaje: 'Ocurrio un error al intentar restar la cantidad de un producto del carrito'});
     }
 }
+
+export const eliminarProductoCarrito = async (req, res) => {
+    try{
+        const { productoId } = req.params;
+        const usuarioId = req.usuario.id;
+        
+        const carrito = await buscarOcrearCarrito(usuarioId);
+        carrito.items = carrito.items.filter((item) => item.producto.toString() !== productoId);
+
+        await carrito.save();
+        await carrito.populate("items.producto", "nombreProducto precio imagen");
+        res.status(200).json({ mensaje: 'Producto eliminado del carrito exitosamente' });
+    }
+    catch(error){
+        console.error(error);
+        res.status(500).json({ mensaje: 'Ocurrio un error al intentar eliminar un producto del carrito'});
+    }
+}
