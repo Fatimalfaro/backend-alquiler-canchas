@@ -14,7 +14,8 @@ const carritoSchema = new mongoose.Schema({
         },
         cantidad: {
             type: Number,
-            default: 1
+            default: 1,
+            min: 1
         }
     }]
 },
