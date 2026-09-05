@@ -32,3 +32,18 @@ export const agregarAlCarrito = async (req, res) => {
         res.status(500).json({ mensaje: 'Ocurrio un error al intentar agregar un producto al carrito'});
     }
 }
+
+export const obtenerCarrito = async (req, res) => {
+    try{
+        const usuarioId = req.usuario.id;
+        const carrito = await buscarOcrearCarrito(usuarioId);
+        
+        await carrito.populate("items.producto", "nombreProducto precio imagen");
+        
+        res.status(200).json(carrito);
+
+    }catch(error){
+        console.error(error);
+        res.status(500).json({ mensaje: 'Ocurrio un error al intentar obtener el carrito'});
+    }
+}
