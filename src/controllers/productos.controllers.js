@@ -15,6 +15,9 @@ export const listarProductos = async (req, res) => {
     try {
         
         const { termino, pagina, limite } = req.query;
+        const numeroPagina = parseInt(pagina)
+        const cantProductos = parseInt(limite) 
+        const salto = (numeroPagina - 1) * cantProductos;
 
 
         const query = {}
@@ -23,8 +26,12 @@ export const listarProductos = async (req, res) => {
             query.nombreProducto = { $regex: termino, $options: 'i' };
             }
 
-        const productos = await Producto.find(query).populate("categoria", "nombreCategoria");
-        res.status(200).json(productos);
+        const [productos, cantidadProductos] = await Promise.all([
+            Producto.find(query).populate("categoria", "nombreCategoria").skip(salto).limit(cantProductos),
+            Producto.countDocuments(query)
+        ]);
+
+        res.status(200).json({ productos, cantidadProductos });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Ocurrio un error al intentar listar los productos' });
