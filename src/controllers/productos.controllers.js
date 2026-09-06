@@ -13,7 +13,17 @@ export const agregarProducto = async (req, res) => {
 
 export const listarProductos = async (req, res) => {
     try {
-        const productos = await Producto.find().populate("categoria", "nombreCategoria");
+        
+        const { termino, pagina, limite } = req.query;
+
+
+        const query = {}
+
+        if (termino) {
+            query.nombreProducto = { $regex: termino, $options: 'i' };
+            }
+
+        const productos = await Producto.find(query).populate("categoria", "nombreCategoria");
         res.status(200).json(productos);
     } catch (error) {
         console.error(error);
