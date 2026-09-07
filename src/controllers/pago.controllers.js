@@ -1,4 +1,4 @@
-import {MercadoPagoConfig} from "mercadopago";
+import {MercadoPagoConfig, Preference} from "mercadopago";
 import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
 import Orden from "../models/orden.js";
 
@@ -47,8 +47,31 @@ export const crearPreferenciaPago = async(req,res)=>{
 
             await nuevaOrden.save()
 
+            const preference = new Preference(client)
 
-        res.status(201).json(carrito)
+            const result = await preference.create({
+                body:{
+                    items: itemsMP,
+                    external_reference: nuevaOrden._id.toString(),
+                    back_urls:{
+                        success:`${process.env.FRONTEND_URL}/checkout/resultado?status=sucess`,
+                        failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
+                        pending:`${process.env.FRONTEND_URL}/checkout/resultado?status=pending`
+                    },
+                    auto_return: "approved"
+                }
+            })
+
+            nuevaOrden.preferenceId = result.id
+            await nuevaOrden.save()
+
+        res.status(201).json({
+            mensaje: 'La preferencia de pago fue creada con exito',
+            init_point: result.init_point,
+            sandbox_init_point: result.sandbox_init_point,
+            ordenId: nuevaOrden._id
+        }
+        )
 
     }catch(error){
         console.error(error);
