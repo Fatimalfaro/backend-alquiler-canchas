@@ -6,7 +6,7 @@ const client = new MercadoPagoConfig({accessToken: process.env.MP_ACCESS_TOKEN})
 
 export const crearPreferenciaPago = async(req,res)=>{
     try{
-        const userId = req.user.id;
+        const userId = req.usuario.id;
         const carrito = await buscarOcrearCarrito(userId)
         await carrito.populate('items.producto')
 
@@ -32,12 +32,12 @@ export const crearPreferenciaPago = async(req,res)=>{
     );
 
             const itemsOrden = carrito.items.map((item)=>({
-                producto: item.servicio._id,
+                producto: item.producto._id,
                 nombreProducto: item.producto.nombreProducto,
                 precioUnitario: item.producto.precio,
                 cantidad: item.cantidad
             }));
-
+             
             const nuevaOrden = new Orden({
                 usuario: userId,
                 items: itemsOrden,
