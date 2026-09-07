@@ -5,24 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "dev": "node --env-file .env --watch index"
+    "dev": "node --watch index"
   },
   "keywords": [],
   "author": "Fátima Alfaro, Angel Nader, Judith Bertolini, Jesús Abel Almaraz, Valentin Gonzalez, Patti",
   "license": "ISC",
   "packageManager": "pnpm@11.5.2",
-  "type": "module",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-validator": "^7.3.2",
-    "jsonwebtoken": "^9.0.3",
-    "mercadopago": "^3.6.0",
-    "mongoose": "^9.9.4",
-    "morgan": "^1.12.0",
-    "nodemailer": "^9.1.0"
-  }
+  "type": "module"
 }
