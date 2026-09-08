@@ -53,6 +53,7 @@ export const crearPreferenciaPago = async(req,res)=>{
                 body:{
                     items: itemsMP,
                     external_reference: nuevaOrden._id.toString(),
+                    notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
                     back_urls:{
                         success:`${process.env.FRONTEND_URL}/checkout/resultado?status=sucess`,
                         failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
@@ -78,3 +79,26 @@ export const crearPreferenciaPago = async(req,res)=>{
         res.status(500).json({mensaje:'Ocurrió un error al crear la preferencia de pago'})
     }
 }
+
+export const recibirWebhook = async (req, res) => {
+  try {
+    console.log("🚨 CUIDADO: El Webhook se está ejecutando!");
+    console.log("Query params:", req.query);
+    console.log("Body payload:", req.body);
+
+    const paymentId = 
+      req.query.id || 
+      req.query["data.id"] || 
+      req.body?.data?.id;
+
+    const topicOrType = 
+      req.query.topic || 
+      req.query.type || 
+      req.body?.type || 
+      req.body?.action;
+
+    }catch (error) {
+    console.error("❌ Error en Webhook:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
