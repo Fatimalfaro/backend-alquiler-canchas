@@ -1,4 +1,4 @@
-import {MercadoPagoConfig, Preference} from "mercadopago";
+import {MercadoPagoConfig, Preference, Payment} from "mercadopago";
 import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
 import Orden from "../models/orden.js";
 
