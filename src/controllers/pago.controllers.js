@@ -97,7 +97,33 @@ export const recibirWebhook = async (req, res) => {
       req.body?.type || 
       req.body?.action;
 
-    }catch (error) {
+    if ((topicOrType === "payment" || topicOrType === "payment.created" || topicOrType === "payment.updated") && paymentId) {
+      
+      const payment = new Payment(client);
+      const pagoData = await payment.get({ id: paymentId });
+
+      if (pagoData.status === "approved") {
+        const ordenActualizada = await Orden.findByIdAndUpdate(
+          pagoData.external_reference,
+          {
+            estado: "aprobado",
+            paymentId: paymentId,
+          },
+          { new: true }
+        );
+
+        if (ordenActualizada) {
+          const carrito = await buscarOcrearCarrito(ordenActualizada.usuario);
+          carrito.items = [];
+          await carrito.save();
+          console.log("🛒 Carrito vaciado con éxito para el usuario:", ordenActualizada.usuario);
+        }
+
+        console.log("✅ Pago aprobado para la Orden:", pagoData.external_reference);
+      }
+    }
+
+  } catch (error) {
     console.error("❌ Error en Webhook:", error.message);
     res.status(500).json({ error: error.message });
   }
