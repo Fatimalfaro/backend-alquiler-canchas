@@ -357,6 +357,7 @@ export const obtenerUsuarioPorId = async (req, res) => {
   }
 };
 
+
 export const actualizarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -368,40 +369,78 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
+    // Un usuario puede modificar su propia cuenta.
+    // Un admin puede modificar cualquier usuario.
     if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
       return res.status(403).json({
         mensaje: "No tenés permisos para modificar este usuario",
       });
     }
 
+    // Buscar el usuario actual
+    const usuarioActual = await Usuario.findById(id);
+
+    if (!usuarioActual) {
+      return res.status(404).json({
+        mensaje: "Usuario no encontrado",
+      });
+    }
+
     const datosActualizar = {};
 
+    let emailCambio = false;
+    let codigoParaEnviar = null;
+
+    // Actualizar nombre
     if (nombre !== undefined) {
       datosActualizar.nombre = nombre;
     }
 
+    // Actualizar apellido
     if (apellido !== undefined) {
       datosActualizar.apellido = apellido;
     }
 
+    // Actualizar email
     if (email !== undefined) {
       const emailNormalizado = email.toLowerCase().trim();
 
-      // Verificar que el nuevo email no pertenezca a otro usuario
-      const emailExistente = await Usuario.findOne({
-        email: emailNormalizado,
-        _id: { $ne: id },
-      });
-
-      if (emailExistente) {
-        return res.status(400).json({
-          mensaje: "El email ya está registrado por otro usuario",
+      // Solo procesar la verificación si realmente cambió el email
+      if (emailNormalizado !== usuarioActual.email) {
+        // Verificar que el nuevo email no pertenezca a otro usuario
+        const emailExistente = await Usuario.findOne({
+          email: emailNormalizado,
+          _id: { $ne: id },
         });
-      }
 
-      datosActualizar.email = emailNormalizado;
+        if (emailExistente) {
+          return res.status(400).json({
+            mensaje: "El email ya está registrado por otro usuario",
+          });
+        }
+
+        // Generar nuevo código de verificación
+        codigoParaEnviar = Math.floor(
+          100000 + Math.random() * 900000,
+        ).toString();
+
+        // Código válido durante 10 minutos
+        const codigoVerificacionExpira = new Date(
+          Date.now() + 10 * 60 * 1000,
+        );
+
+        datosActualizar.email = emailNormalizado;
+        datosActualizar.emailVerificado = false;
+        datosActualizar.codigoVerificacion = codigoParaEnviar;
+        datosActualizar.codigoVerificacionExpira =
+          codigoVerificacionExpira;
+        datosActualizar.ultimoCodigoEnviado = new Date();
+
+        emailCambio = true;
+      }
     }
 
+    // Actualizar contraseña
     if (password !== undefined) {
       datosActualizar.password = await bcrypt.hash(password, 10);
     }
@@ -416,12 +455,14 @@ export const actualizarUsuario = async (req, res) => {
       datosActualizar.activo = activo;
     }
 
+    // Verificar que haya algo para actualizar
     if (Object.keys(datosActualizar).length === 0) {
       return res.status(400).json({
         mensaje: "No hay datos válidos para actualizar",
       });
     }
 
+    // Actualizar usuario
     const usuarioActualizado = await Usuario.findByIdAndUpdate(
       id,
       datosActualizar,
@@ -437,6 +478,21 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
+    // Si cambió el email, enviar nuevo código de verificación
+    if (emailCambio) {
+      await enviarCodigoVerificacion(
+        usuarioActualizado.email,
+        codigoParaEnviar,
+      );
+
+      return res.status(200).json({
+        mensaje:
+          "Usuario actualizado correctamente. Se envió un nuevo código de verificación al email.",
+        usuario: usuarioActualizado,
+        requiereVerificacion: true,
+      });
+    }
+
     return res.status(200).json({
       mensaje: "Usuario actualizado correctamente",
       usuario: usuarioActualizado,
@@ -449,6 +505,7 @@ export const actualizarUsuario = async (req, res) => {
     });
   }
 };
+
 
 export const eliminarUsuario = async (req, res) => {
   try {
