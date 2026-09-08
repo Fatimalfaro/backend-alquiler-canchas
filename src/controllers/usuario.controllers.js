@@ -10,7 +10,7 @@ export const registrarUsuario = async (req, res) => {
 
     if (!nombre || !apellido || !email || !password) {
       return res.status(400).json({
-        mensaje: "Todos los campos son obligatorios",
+        mensaje: "Los campos son obligatorios",
       });
     }
 
