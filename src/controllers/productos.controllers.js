@@ -1,10 +1,25 @@
 import Producto from "../models/producto.js";
+import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
 
 export const agregarProducto = async (req, res) => {
     try {
-        const producto = new Producto(req.body);
+        let imagenUrl = "";
+        if(req.file){
+            const resultado = await subirImagenACloudinary(req.file.buffer);
+            imagenUrl = resultado.secure_url;
+        }else{
+            imagenUrl = "https://images.pexels.com/photos/9853347/pexels-photo-9853347.jpeg";
+        }
+        const nuevoProductoData = {
+            ...req.body,
+            imagen: imagenUrl,
+        };
+
+        const producto = new Producto(nuevoProductoData);
         await producto.save();
+
         res.status(201).json({ message: 'Producto agregado exitosamente' });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Ocurrio un error al intentar agregar un producto' });
@@ -66,7 +81,26 @@ export const borrarProductoPorID = async (req, res) => {
 
 export const editarProductoPorID = async (req, res) => {
     try {
-        const productoEditado = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+        const { id } = req.params;
+        const productoExistente = await Producto.findById(id);
+        if (!productoExistente) {
+            return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
+        }
+        
+        let imagenUrl = productoExistente.imagen; 
+        
+        if (req.file) {
+            const resultado = await subirImagenACloudinary(req.file.buffer);
+            imagenUrl = resultado.secure_url;
+        }
+
+        const datosActualizados = {
+            ...req.body,
+            imagen: imagenUrl,
+        };
+
+        const productoEditado = await Producto.findByIdAndUpdate(req.params.id, datosActualizados, { new: true });
         if (!productoEditado) {
             return res.status(404).json({ message: 'No se encontro un producto con el ID enviado' });
         }
