@@ -17,3 +17,5 @@ const subirImagenACloudinary = (buffer) =>{
         stream.end(buffer)
     })
 }
+
+export default subirImagenACloudinary
