@@ -1,4 +1,4 @@
-import {MercadoPagoConfig, Preference} from "mercadopago";
+import {MercadoPagoConfig, Preference, Payment} from "mercadopago";
 import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
 import Orden from "../models/orden.js";
 
@@ -53,6 +53,7 @@ export const crearPreferenciaPago = async(req,res)=>{
                 body:{
                     items: itemsMP,
                     external_reference: nuevaOrden._id.toString(),
+                    notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
                     back_urls:{
                         success:`${process.env.FRONTEND_URL}/checkout/resultado?status=sucess`,
                         failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
@@ -78,3 +79,52 @@ export const crearPreferenciaPago = async(req,res)=>{
         res.status(500).json({mensaje:'Ocurrió un error al crear la preferencia de pago'})
     }
 }
+
+export const recibirWebhook = async (req, res) => {
+  try {
+    console.log("🚨 CUIDADO: El Webhook se está ejecutando!");
+    console.log("Query params:", req.query);
+    console.log("Body payload:", req.body);
+
+    const paymentId = 
+      req.query.id || 
+      req.query["data.id"] || 
+      req.body?.data?.id;
+
+    const topicOrType = 
+      req.query.topic || 
+      req.query.type || 
+      req.body?.type || 
+      req.body?.action;
+
+    if ((topicOrType === "payment" || topicOrType === "payment.created" || topicOrType === "payment.updated") && paymentId) {
+      
+      const payment = new Payment(client);
+      const pagoData = await payment.get({ id: paymentId });
+
+      if (pagoData.status === "approved") {
+        const ordenActualizada = await Orden.findByIdAndUpdate(
+          pagoData.external_reference,
+          {
+            estado: "aprobado",
+            paymentId: paymentId,
+          },
+          { new: true }
+        );
+
+        if (ordenActualizada) {
+          const carrito = await buscarOcrearCarrito(ordenActualizada.usuario);
+          carrito.items = [];
+          await carrito.save();
+          console.log("🛒 Carrito vaciado con éxito para el usuario:", ordenActualizada.usuario);
+        }
+
+        console.log("✅ Pago aprobado para la Orden:", pagoData.external_reference);
+      }
+    }
+
+  } catch (error) {
+    console.error("❌ Error en Webhook:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
