@@ -122,6 +122,7 @@ export const recibirWebhook = async (req, res) => {
         console.log("✅ Pago aprobado para la Orden:", pagoData.external_reference);
       }
     }
+    res.sendStatus(200);
 
   } catch (error) {
     console.error("❌ Error en Webhook:", error.message);
