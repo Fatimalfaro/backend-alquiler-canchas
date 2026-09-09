@@ -1,6 +1,6 @@
 const errorMulter = (err, _req, res, next) => {
     if(err && err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({mensaje: 'Ña imagen no puede superar los 2MB'})
+        return res.status(400).json({mensaje: 'La imagen no puede superar los 2MB'})
     }
     next(err)
 }
