@@ -11,7 +11,7 @@ const router = Router();
 router.route("/").post(verificarToken, verificarRol("admin"), upload.single('imagen'), errorMulter, validacionProducto, agregarProducto).get(listarProductos);
 router.route("/:id")
 .get(validacionIDProducto, buscarProductoPorID)
-.delete(verificarToken ,validacionIDProducto, borrarProductoPorID)
+.delete(verificarToken, verificarRol("admin"), validacionIDProducto, borrarProductoPorID)
 .put(verificarToken, verificarRol("admin"), upload.single('imagen'), errorMulter, validacionIDProducto, validacionProducto, editarProductoPorID)
 .patch(verificarToken, verificarRol("admin"), upload.single('imagen'), errorMulter, validacionIDProducto, validacionPatchProducto, editarProductoPorID);
 
