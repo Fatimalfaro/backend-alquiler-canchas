@@ -22,7 +22,7 @@ const router = Router();
 
 router
   .route("/")
-  .get(verificarToken, listarCanchas)
+  .get(listarCanchas)
 
   .post(
   verificarToken,
