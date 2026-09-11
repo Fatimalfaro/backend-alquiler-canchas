@@ -22,12 +22,6 @@ export const validacionCancha = [
     .isFloat({ min: 0 })
     .withMessage("El precio debe ser un número mayor o igual a 0"),
 
-  body("imagen")
-    .notEmpty()
-    .withMessage("La imagen es obligatoria")
-    .isURL()
-    .withMessage("La imagen debe ser una URL válida"),
-
   body("tipo")
     .notEmpty()
     .withMessage("El tipo de cancha es obligatorio")
@@ -41,13 +35,13 @@ export const validacionCancha = [
 
   resultadoValidacion,
 ];
-
 export const validacionIDCancha = [
-  param("id").isMongoId().withMessage("El ID de la cancha no es válido"),
+  param("id")
+    .isMongoId()
+    .withMessage("El ID de la cancha no es válido"),
 
   resultadoValidacion,
 ];
-
 export const validacionPatchCancha = [
   body("nombre")
     .optional()
@@ -65,11 +59,6 @@ export const validacionPatchCancha = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage("El precio debe ser un número mayor o igual a 0"),
-
-  body("imagen")
-    .optional()
-    .isURL()
-    .withMessage("La imagen debe ser una URL válida"),
 
   body("tipo")
     .optional()

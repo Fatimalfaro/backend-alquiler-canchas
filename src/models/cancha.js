@@ -30,6 +30,8 @@ const canchaSchema = new Schema(
       trim: true,
     },
 
+  
+
     tipo: {
       type: String,
       required: true,
