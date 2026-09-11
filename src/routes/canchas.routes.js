@@ -16,6 +16,7 @@ import {
 
 import { verificarToken } from "../middlewares/authMiddleware.js";
 import { verificarRol } from "../middlewares/rolMiddleware.js";
+import upload from "../middlewares/upload.js";
 
 const router = Router();
 
@@ -23,8 +24,13 @@ router
   .route("/")
   .get(verificarToken, listarCanchas)
 
-  .post(verificarToken, verificarRol("admin"), validacionCancha, agregarCancha);
-
+  .post(
+  verificarToken,
+  verificarRol("admin"),
+  upload.single("imagen"),
+  validacionCancha,
+  agregarCancha,
+)
 router
   .route("/:id")
 
@@ -37,20 +43,22 @@ router
     borrarCanchaPorID,
   )
 
-  .put(
-    verificarToken,
-    verificarRol("admin"),
-    validacionIDCancha,
-    validacionCancha,
-    editarCanchaPorID,
-  )
+ .put(
+  verificarToken,
+  verificarRol("admin"),
+  upload.single("imagen"),
+  validacionIDCancha,
+  validacionCancha,
+  editarCanchaPorID,
+)
 
-  .patch(
-    verificarToken,
-    verificarRol("admin"),
-    validacionIDCancha,
-    validacionPatchCancha,
-    editarCanchaPorID,
-  );
+ .patch(
+  verificarToken,
+  verificarRol("admin"),
+  upload.single("imagen"),
+  validacionIDCancha,
+  validacionPatchCancha,
+  editarCanchaPorID,
+);
 
 export default router;
