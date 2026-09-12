@@ -57,22 +57,48 @@ export const crearPreferenciaPago = async (req, res) => {
       `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
     );
 
-    const result = await preference.create({
-      body: {
-        items: itemsMP,
-        external_reference: nuevaOrden._id.toString(),
-        notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
-        back_urls: {
-          success: `${process.env.FRONTEND_URL}/checkout/resultado?status=sucess`,
-          failure: `${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
-          pending: `${process.env.FRONTEND_URL}/checkout/resultado?status=pending`,
-        },
-        auto_return: "approved",
-      },
-    });
+            const itemsOrden = carrito.items.map((item)=>({
+                producto: item.producto._id,
+                nombreProducto: item.producto.nombreProducto,
+                precioUnitario: item.producto.precio,
+                cantidad: item.cantidad
+            }));
+             
+            const nuevaOrden = new Orden({
+                usuario: userId,
+                items: itemsOrden,
+                montoTotal,
+                estado: 'pendiente'
+            })
 
-    nuevaOrden.preferenceId = result.id;
-    await nuevaOrden.save();
+            await nuevaOrden.save()
+
+            const preference = new Preference(client)
+
+            const result = await preference.create({
+                body:{
+                    items: itemsMP,
+                    external_reference: nuevaOrden._id.toString(),
+                    notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
+                    back_urls:{
+                        success:`${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
+                        failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
+                        pending:`${process.env.FRONTEND_URL}/checkout/resultado?status=pending`
+                    },
+                    auto_return: "approved"
+                }
+            })
+
+            nuevaOrden.preferenceId = result.id
+            await nuevaOrden.save()
+
+        res.status(201).json({
+            mensaje: 'La preferencia de pago fue creada con exito',
+            init_point: result.init_point,
+            sandbox_init_point: result.sandbox_init_point,
+            ordenId: nuevaOrden._id
+        }
+        )
 
     res.status(201).json({
       mensaje: "La preferencia de pago fue creada con exito",
@@ -178,88 +204,93 @@ export const recibirWebhook = async (req, res) => {
     console.log("Query params:", req.query);
     console.log("Body payload:", req.body);
 
-    const paymentId =
-      req.query.id || req.query["data.id"] || req.body?.data?.id;
-
     const topicOrType =
-      req.query.topic || req.query.type || req.body?.type || req.body?.action;
+      req.query.topic ||
+      req.query.type ||
+      req.body?.type ||
+      req.body?.action;
 
-    if (
-      (topicOrType === "payment" ||
-        topicOrType === "payment.created" ||
-        topicOrType === "payment.updated") &&
-      paymentId
-    ) {
+    let paymentId =
+      req.query.id ||
+      req.query["data.id"] ||
+      req.body?.data?.id;
+
+    // Si Mercado Pago manda merchant_order,
+    // buscamos el pago dentro de esa orden
+    if (topicOrType === "merchant_order") {
+      const merchantOrderId = req.query.id;
+
+      const respuesta = await fetch(
+        `https://api.mercadopago.com/merchant_orders/${merchantOrderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          },
+        }
+      );
+
+      const merchantOrder = await respuesta.json();
+
+      const pagoAprobado = merchantOrder.payments?.find(
+        (pago) => pago.status === "approved"
+      );
+
+      if (pagoAprobado) {
+        paymentId = pagoAprobado.id;
+      }
+    }
+
+    // Procesamos el pago
+    if (paymentId) {
       const payment = new Payment(client);
 
       const pagoData = await payment.get({
         id: paymentId,
       });
 
-      console.log("💳 Estado del pago:", pagoData.status);
-      console.log("🔎 External reference:", pagoData.external_reference);
-
       if (pagoData.status === "approved") {
-        const externalReference = pagoData.external_reference;
-
-        // -----------------------------------------
-        // 1. BUSCAR SI ES UNA ORDEN DE PRODUCTOS
-        // -----------------------------------------
-
-        const ordenActualizada = await Orden.findByIdAndUpdate(
-          externalReference,
-          {
-            estado: "aprobada",
-            paymentId: paymentId,
-          },
-          { new: true },
-        );
+        const ordenActualizada =
+          await Orden.findByIdAndUpdate(
+            pagoData.external_reference,
+            {
+              estado: "aprobada",
+              paymentId: paymentId,
+            },
+            { new: true }
+          );
 
         if (ordenActualizada) {
-          const carrito = await buscarOcrearCarrito(ordenActualizada.usuario);
+          const carrito = await buscarOcrearCarrito(
+            ordenActualizada.usuario
+          );
 
           carrito.items = [];
 
           await carrito.save();
 
-          console.log("✅ Pago aprobado para la Orden:", ordenActualizada._id);
-
-          return res.sendStatus(200);
-        }
-
-        // -----------------------------------------
-        // 2. SI NO ES ORDEN, BUSCAR RESERVA
-        // -----------------------------------------
-
-        const reservaActualizada = await Reserva.findByIdAndUpdate(
-          externalReference,
-          {
-            estado: "confirmada",
-          },
-          { new: true },
-        );
-
-        if (reservaActualizada) {
           console.log(
-            "⚽ Pago aprobado para la Reserva:",
-            reservaActualizada._id,
+            "🛒 Carrito vaciado con éxito para el usuario:",
+            ordenActualizada.usuario
           );
-
-          return res.sendStatus(200);
         }
 
         console.log(
-          "⚠️ No se encontró Orden ni Reserva para:",
-          externalReference,
+          "✅ Pago aprobado para la Orden:",
+          pagoData.external_reference
         );
       }
     }
 
+    return res.sendStatus(200);
+
     res.sendStatus(200);
   } catch (error) {
-    console.error("❌ Error en Webhook:", error.message);
+    console.error(
+      "❌ Error en Webhook:",
+      error.message
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error.message,
     });
   }
