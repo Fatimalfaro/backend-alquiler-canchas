@@ -86,6 +86,8 @@ export const recibirWebhook = async (req, res) => {
     console.log("Query params:", req.query);
     console.log("Body payload:", req.body);
 
+    res.sendStatus(200);
+    
     const paymentId = 
       req.query.id || 
       req.query["data.id"] || 
