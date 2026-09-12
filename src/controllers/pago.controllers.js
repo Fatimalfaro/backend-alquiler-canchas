@@ -55,7 +55,7 @@ export const crearPreferenciaPago = async(req,res)=>{
                     external_reference: nuevaOrden._id.toString(),
                     notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
                     back_urls:{
-                        success:`${process.env.FRONTEND_URL}/checkout/resultado?status=sucess`,
+                        success:`${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
                         failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
                         pending:`${process.env.FRONTEND_URL}/checkout/resultado?status=pending`
                     },
