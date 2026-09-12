@@ -1,4 +1,5 @@
 import { body, param } from "express-validator";
+
 import { resultadoValidacion } from "./resultadoValidacion.js";
 
 export const validacionReserva = [
@@ -16,21 +17,17 @@ export const validacionReserva = [
 
   body("horaInicio")
     .notEmpty()
-    .withMessage("La hora de inicio es obligatoria")
-    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .withMessage("La hora de inicio debe tener el formato HH:mm"),
-
-  body("horaFin")
-    .notEmpty()
-    .withMessage("La hora de fin es obligatoria")
-    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .withMessage("La hora de fin debe tener el formato HH:mm"),
+    .withMessage("El turno es obligatorio")
+    .matches(/^([01]\d|2[0-3]):00$/)
+    .withMessage("El turno debe ser una hora exacta, por ejemplo 09:00"),
 
   resultadoValidacion,
 ];
 
 export const validacionIDReserva = [
-  param("id").isMongoId().withMessage("El ID de la reserva no es válido"),
+  param("id")
+    .isMongoId()
+    .withMessage("El ID de la reserva no es válido"),
 
   resultadoValidacion,
 ];
@@ -41,17 +38,15 @@ export const validacionPatchReserva = [
     .isMongoId()
     .withMessage("El ID de la cancha no es válido"),
 
-  body("fecha").optional().isISO8601().withMessage("La fecha no es válida"),
+  body("fecha")
+    .optional()
+    .isISO8601()
+    .withMessage("La fecha no es válida"),
 
   body("horaInicio")
     .optional()
-    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .withMessage("La hora de inicio debe tener el formato HH:mm"),
-
-  body("horaFin")
-    .optional()
-    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .withMessage("La hora de fin debe tener el formato HH:mm"),
+    .matches(/^([01]\d|2[0-3]):00$/)
+    .withMessage("El turno debe ser una hora exacta, por ejemplo 09:00"),
 
   body("estado")
     .optional()

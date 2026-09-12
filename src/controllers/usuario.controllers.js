@@ -309,7 +309,9 @@ export const obtenerUsuarioActual = async (req, res) => {
 
 export const obtenerUsuarios = async (req, res) => {
   try {
-    const usuarios = await Usuario.find().select("-password");
+    const usuarios = await Usuario.find({
+      _id: { $ne: process.env.ADMIN_PRINCIPAL_ID },
+    }).select("-password");
 
     return res.status(200).json(usuarios);
   } catch (error) {
@@ -320,7 +322,6 @@ export const obtenerUsuarios = async (req, res) => {
     });
   }
 };
-
 export const obtenerUsuarioPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -357,7 +358,6 @@ export const obtenerUsuarioPorId = async (req, res) => {
   }
 };
 
-
 export const actualizarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -383,6 +383,17 @@ export const actualizarUsuario = async (req, res) => {
     if (!usuarioActual) {
       return res.status(404).json({
         mensaje: "Usuario no encontrado",
+      });
+    }
+
+    // Proteger al administrador principal
+    // Nadie puede modificar esta cuenta desde este endpoint.
+    if (
+      usuarioActual._id.toString() === process.env.ADMIN_PRINCIPAL_ID &&
+      req.usuario.id.toString() !== process.env.ADMIN_PRINCIPAL_ID
+    ) {
+      return res.status(403).json({
+        mensaje: "No se puede modificar el administrador principal",
       });
     }
 
@@ -425,15 +436,12 @@ export const actualizarUsuario = async (req, res) => {
         ).toString();
 
         // Código válido durante 10 minutos
-        const codigoVerificacionExpira = new Date(
-          Date.now() + 10 * 60 * 1000,
-        );
+        const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
 
         datosActualizar.email = emailNormalizado;
         datosActualizar.emailVerificado = false;
         datosActualizar.codigoVerificacion = codigoParaEnviar;
-        datosActualizar.codigoVerificacionExpira =
-          codigoVerificacionExpira;
+        datosActualizar.codigoVerificacionExpira = codigoVerificacionExpira;
         datosActualizar.ultimoCodigoEnviado = new Date();
 
         emailCambio = true;
@@ -506,7 +514,6 @@ export const actualizarUsuario = async (req, res) => {
   }
 };
 
-
 export const eliminarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -517,13 +524,22 @@ export const eliminarUsuario = async (req, res) => {
       });
     }
 
-    const usuarioEliminado = await Usuario.findByIdAndDelete(id);
+    const usuario = await Usuario.findById(id);
 
-    if (!usuarioEliminado) {
+    if (!usuario) {
       return res.status(404).json({
         mensaje: "Usuario no encontrado",
       });
     }
+
+    // Proteger al administrador principal
+    if (usuario._id.toString() === process.env.ADMIN_PRINCIPAL_ID) {
+      return res.status(403).json({
+        mensaje: "No se puede eliminar el administrador principal",
+      });
+    }
+
+    await Usuario.findByIdAndDelete(id);
 
     return res.status(200).json({
       mensaje: "Usuario eliminado correctamente",
@@ -536,7 +552,6 @@ export const eliminarUsuario = async (req, res) => {
     });
   }
 };
-
 export const cerrarSesion = (req, res) => {
   res.clearCookie("token");
 
