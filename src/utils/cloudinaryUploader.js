@@ -5,17 +5,23 @@ import cloudinary from "./cloudinary.js";
  * @returns {Promise<Object>}
  */
 
-const subirImagenACloudinary = (buffer) =>{
-    return new Promise ((resolve, reject)=>{
-        const stream = cloudinary.uploader.upload_stream({folder: 'imagenes-cancha'}, (error, result)=>{
-            if(result){
-                resolve(result)
-            }else{
-                reject(error)
-            }
-        })
-        stream.end(buffer)
-    })
-}
+const subirImagenACloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "imagenes-cancha",
+      },
+      (error, result) => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(error);
+        }
+      },
+    );
 
-export default subirImagenACloudinary
+    stream.end(buffer);
+  });
+};
+
+export default subirImagenACloudinary;

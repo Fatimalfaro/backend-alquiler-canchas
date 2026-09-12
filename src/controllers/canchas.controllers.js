@@ -1,8 +1,23 @@
 import Cancha from "../models/cancha.js";
+import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
 
 export const agregarCancha = async (req, res) => {
   try {
-    const cancha = new Cancha(req.body);
+    if (!req.file) {
+      return res.status(400).json({
+        message: "La imagen de la cancha es obligatoria",
+      });
+    }
+
+    const datosCancha = {
+      ...req.body,
+    };
+
+    const resultado = await subirImagenACloudinary(req.file.buffer);
+
+    datosCancha.imagen = resultado.secure_url;
+
+    const cancha = new Cancha(datosCancha);
 
     await cancha.save();
 
@@ -38,7 +53,6 @@ export const listarCanchas = async (req, res) => {
 
     const [canchas, cantidadCanchas] = await Promise.all([
       Cancha.find(query).skip(salto).limit(cantCanchas),
-
       Cancha.countDocuments(query),
     ]);
 
@@ -99,23 +113,33 @@ export const borrarCanchaPorID = async (req, res) => {
 
 export const editarCanchaPorID = async (req, res) => {
   try {
-    const canchaEditada = await Cancha.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-      },
-    );
+    const cancha = await Cancha.findById(req.params.id);
 
-    if (!canchaEditada) {
+    if (!cancha) {
       return res.status(404).json({
         message: "No se encontró una cancha con el ID enviado",
       });
     }
 
+    // Actualizamos los campos enviados
+    cancha.nombre = req.body.nombre;
+    cancha.descripcion = req.body.descripcion;
+    cancha.precio = req.body.precio;
+    cancha.tipo = req.body.tipo;
+    cancha.disponible = req.body.disponible;
+
+    // Si se seleccionó una nueva imagen, la subimos a Cloudinary
+    if (req.file) {
+      const resultado = await subirImagenACloudinary(req.file.buffer);
+
+      cancha.imagen = resultado.secure_url;
+    }
+
+    await cancha.save();
+
     res.status(200).json({
       message: "La cancha se actualizó correctamente",
-      cancha: canchaEditada,
+      cancha,
     });
   } catch (error) {
     console.error(error);
