@@ -86,46 +86,93 @@ export const recibirWebhook = async (req, res) => {
     console.log("Query params:", req.query);
     console.log("Body payload:", req.body);
 
-    const paymentId = 
-      req.query.id || 
-      req.query["data.id"] || 
-      req.body?.data?.id;
-
-    const topicOrType = 
-      req.query.topic || 
-      req.query.type || 
-      req.body?.type || 
+    const topicOrType =
+      req.query.topic ||
+      req.query.type ||
+      req.body?.type ||
       req.body?.action;
 
-    if ((topicOrType === "payment" || topicOrType === "payment.created" || topicOrType === "payment.updated") && paymentId) {
-      
-      const payment = new Payment(client);
-      const pagoData = await payment.get({ id: paymentId });
+    let paymentId =
+      req.query.id ||
+      req.query["data.id"] ||
+      req.body?.data?.id;
 
-      if (pagoData.status === "approved") {
-        const ordenActualizada = await Orden.findByIdAndUpdate(
-          pagoData.external_reference,
-          {
-            estado: "aprobada",
-            paymentId: paymentId,
+    // Si Mercado Pago manda merchant_order,
+    // buscamos el pago dentro de esa orden
+    if (topicOrType === "merchant_order") {
+      const merchantOrderId = req.query.id;
+
+      const respuesta = await fetch(
+        `https://api.mercadopago.com/merchant_orders/${merchantOrderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
           },
-          { new: true }
-        );
-
-        if (ordenActualizada) {
-          const carrito = await buscarOcrearCarrito(ordenActualizada.usuario);
-          carrito.items = [];
-          await carrito.save();
-          console.log("🛒 Carrito vaciado con éxito para el usuario:", ordenActualizada.usuario);
         }
+      );
 
-        console.log("✅ Pago aprobado para la Orden:", pagoData.external_reference);
+      const merchantOrder = await respuesta.json();
+
+      const pagoAprobado = merchantOrder.payments?.find(
+        (pago) => pago.status === "approved"
+      );
+
+      if (pagoAprobado) {
+        paymentId = pagoAprobado.id;
       }
     }
-    res.sendStatus(200);
+
+    // Procesamos el pago
+    if (paymentId) {
+      const payment = new Payment(client);
+
+      const pagoData = await payment.get({
+        id: paymentId,
+      });
+
+      if (pagoData.status === "approved") {
+        const ordenActualizada =
+          await Orden.findByIdAndUpdate(
+            pagoData.external_reference,
+            {
+              estado: "aprobada",
+              paymentId: paymentId,
+            },
+            { new: true }
+          );
+
+        if (ordenActualizada) {
+          const carrito = await buscarOcrearCarrito(
+            ordenActualizada.usuario
+          );
+
+          carrito.items = [];
+
+          await carrito.save();
+
+          console.log(
+            "🛒 Carrito vaciado con éxito para el usuario:",
+            ordenActualizada.usuario
+          );
+        }
+
+        console.log(
+          "✅ Pago aprobado para la Orden:",
+          pagoData.external_reference
+        );
+      }
+    }
+
+    return res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ Error en Webhook:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error(
+      "❌ Error en Webhook:",
+      error.message
+    );
+
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 };
