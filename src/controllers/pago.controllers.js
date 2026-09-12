@@ -148,9 +148,9 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
         notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
         back_urls: {
         
-          success: `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
-          failure: `${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
-          pending: `${process.env.FRONTEND_URL}/checkout/resultado?status=pending`,
+          success: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=success`,
+          failure: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
+          pending: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
         },
         auto_return: "approved",
       },
@@ -257,8 +257,6 @@ export const recibirWebhook = async (req, res) => {
     }
 
     return res.sendStatus(200);
-
-    res.sendStatus(200);
   } catch (error) {
     console.error(
       "❌ Error en Webhook:",
