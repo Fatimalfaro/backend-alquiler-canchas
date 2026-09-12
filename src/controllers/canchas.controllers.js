@@ -36,10 +36,10 @@ export const agregarCancha = async (req, res) => {
 
 export const listarCanchas = async (req, res) => {
   try {
-    const { termino, pagina, limite } = req.query;
+    const { termino} = req.query;
 
-    const numeroPagina = parseInt(pagina);
-    const cantCanchas = parseInt(limite);
+    const numeroPagina = parseInt(req.query.pagina)||1;
+    const cantCanchas = parseInt(req.query.limite)||8;
     const salto = (numeroPagina - 1) * cantCanchas;
 
     const query = {};
@@ -59,6 +59,8 @@ export const listarCanchas = async (req, res) => {
     res.status(200).json({
       canchas,
       cantidadCanchas,
+      pagina: numeroPagina,
+      limite: cantCanchas,
     });
   } catch (error) {
     console.error(error);

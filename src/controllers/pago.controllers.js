@@ -57,24 +57,6 @@ export const crearPreferenciaPago = async (req, res) => {
       `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
     );
 
-            const itemsOrden = carrito.items.map((item)=>({
-                producto: item.producto._id,
-                nombreProducto: item.producto.nombreProducto,
-                precioUnitario: item.producto.precio,
-                cantidad: item.cantidad
-            }));
-             
-            const nuevaOrden = new Orden({
-                usuario: userId,
-                items: itemsOrden,
-                montoTotal,
-                estado: 'pendiente'
-            })
-
-            await nuevaOrden.save()
-
-            const preference = new Preference(client)
-
             const result = await preference.create({
                 body:{
                     items: itemsMP,
@@ -99,13 +81,6 @@ export const crearPreferenciaPago = async (req, res) => {
             ordenId: nuevaOrden._id
         }
         )
-
-    res.status(201).json({
-      mensaje: "La preferencia de pago fue creada con exito",
-      init_point: result.init_point,
-      sandbox_init_point: result.sandbox_init_point,
-      ordenId: nuevaOrden._id,
-    });
   } catch (error) {
     console.error(error);
 
@@ -173,9 +148,9 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
         notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
         back_urls: {
         
-          success: `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
-          failure: `${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
-          pending: `${process.env.FRONTEND_URL}/checkout/resultado?status=pending`,
+          success: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=success`,
+          failure: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
+          pending: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
         },
         auto_return: "approved",
       },
@@ -282,8 +257,6 @@ export const recibirWebhook = async (req, res) => {
     }
 
     return res.sendStatus(200);
-
-    res.sendStatus(200);
   } catch (error) {
     console.error(
       "❌ Error en Webhook:",
