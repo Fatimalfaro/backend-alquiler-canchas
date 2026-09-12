@@ -6,6 +6,7 @@ import {
   buscarReservaPorID,
   editarReservaPorID,
   borrarReservaPorID,
+   obtenerDisponibilidad,
 } from "../controllers/reservas.controllers.js";
 
 import {
@@ -16,12 +17,16 @@ import {
 
 import { verificarToken } from "../middlewares/authMiddleware.js";
 
-
 const router = Router();
 
 router.get("/", verificarToken, listarReservas);
 
 router.post("/", verificarToken, validacionReserva, crearReserva);
+router.get(
+  "/disponibilidad/:cancha/:fecha",
+  verificarToken,
+  obtenerDisponibilidad,
+);
 
 router.get("/:id", verificarToken, validacionIDReserva, buscarReservaPorID);
 

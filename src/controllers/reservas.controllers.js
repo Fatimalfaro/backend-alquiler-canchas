@@ -3,7 +3,7 @@ import Cancha from "../models/cancha.js";
 
 export const crearReserva = async (req, res) => {
   try {
-    const { cancha, fecha, horaInicio, horaFin } = req.body;
+    const { cancha, fecha, horaInicio } = req.body;
 
     const usuario = req.usuario.id;
 
@@ -21,13 +21,22 @@ export const crearReserva = async (req, res) => {
       });
     }
 
-    if (horaFin <= horaInicio) {
-      return res.status(400).json({
-        mensaje: "La hora de fin debe ser posterior a la hora de inicio",
-      });
-    }
+    // Calcular automáticamente la hora de finalización
+    const [hora, minutos] = horaInicio.split(":").map(Number);
+    let horaFin;
 
-    const fechaReserva = new Date(fecha);
+    if (hora === 23) {
+      horaFin = "00:00";
+    } else {
+      const horaFinNumero = hora + 1;
+
+      horaFin = `${String(horaFinNumero).padStart(2, "0")}:${String(
+        minutos,
+      ).padStart(2, "0")}`;
+    }
+    const [anio, mes, dia] = fecha.split("-").map(Number);
+
+    const fechaReserva = new Date(anio, mes - 1, dia);
     fechaReserva.setHours(0, 0, 0, 0);
 
     const hoy = new Date();
@@ -43,13 +52,12 @@ export const crearReserva = async (req, res) => {
       cancha,
       fecha: fechaReserva,
       estado: { $ne: "cancelada" },
-      horaInicio: { $lt: horaFin },
-      horaFin: { $gt: horaInicio },
+      horaInicio,
     });
 
     if (reservaExistente) {
       return res.status(409).json({
-        mensaje: "La cancha ya está reservada en ese horario",
+        mensaje: "La cancha ya está reservada en ese turno",
       });
     }
 
@@ -154,6 +162,7 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
+    // Verificar permisos
     if (
       req.usuario.rol !== "admin" &&
       reserva.usuario.toString() !== req.usuario.id.toString()
@@ -163,12 +172,41 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    const canchaId = req.body.cancha || reserva.cancha;
-    const nuevaFecha = req.body.fecha || reserva.fecha;
-    const nuevaHoraInicio = req.body.horaInicio || reserva.horaInicio;
-    const nuevaHoraFin = req.body.horaFin || reserva.horaFin;
+    // ==========================================
+    // CAMBIO DE ESTADO POR PARTE DEL ADMIN
+    // ==========================================
 
-    // Verificar cancha
+    if (req.usuario.rol === "admin" && req.body.estado) {
+      const estadosPermitidos = ["pendiente", "confirmada", "cancelada"];
+
+      if (!estadosPermitidos.includes(req.body.estado)) {
+        return res.status(400).json({
+          mensaje: "El estado indicado no es válido",
+        });
+      }
+
+      reserva.estado = req.body.estado;
+
+      await reserva.save();
+
+      const reservaActualizada = await Reserva.findById(id)
+        .populate("usuario", "nombre apellido email")
+        .populate("cancha", "nombre tipo precio");
+
+      return res.status(200).json({
+        mensaje: "El estado de la reserva se actualizó correctamente",
+        reserva: reservaActualizada,
+      });
+    }
+
+    // ==========================================
+    // EDICIÓN NORMAL DE CANCHA / FECHA / HORARIO
+    // ==========================================
+
+    const canchaId = req.body.cancha || reserva.cancha;
+
+    const nuevaHoraInicio = req.body.horaInicio || reserva.horaInicio;
+
     const canchaEncontrada = await Cancha.findById(canchaId);
 
     if (!canchaEncontrada) {
@@ -183,14 +221,25 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    if (nuevaHoraFin <= nuevaHoraInicio) {
-      return res.status(400).json({
-        mensaje: "La hora de fin debe ser posterior a la hora de inicio",
-      });
+    // ==========================================
+    // FECHA
+    // ==========================================
+
+    let fechaReserva;
+
+    if (req.body.fecha) {
+      const [anio, mes, dia] = req.body.fecha.split("-").map(Number);
+
+      fechaReserva = new Date(anio, mes - 1, dia);
+      fechaReserva.setHours(0, 0, 0, 0);
+    } else {
+      fechaReserva = new Date(reserva.fecha);
+      fechaReserva.setHours(0, 0, 0, 0);
     }
 
-    const fechaReserva = new Date(nuevaFecha);
-    fechaReserva.setHours(0, 0, 0, 0);
+    // ==========================================
+    // VALIDAR FECHA PASADA
+    // ==========================================
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -201,35 +250,52 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // CALCULAR HORA FIN
+    // ==========================================
+
+    const [hora, minutos] = nuevaHoraInicio.split(":").map(Number);
+
+    let nuevaHoraFin;
+
+    if (hora === 23) {
+      nuevaHoraFin = "00:00";
+    } else {
+      const horaFinNumero = hora + 1;
+
+      nuevaHoraFin = `${String(horaFinNumero).padStart(
+        2,
+        "0",
+      )}:${String(minutos).padStart(2, "0")}`;
+    }
+
+    // ==========================================
+    // VERIFICAR DOBLE RESERVA
+    // ==========================================
+
     const reservaExistente = await Reserva.findOne({
       _id: { $ne: id },
       cancha: canchaId,
       fecha: fechaReserva,
       estado: { $ne: "cancelada" },
-      horaInicio: { $lt: nuevaHoraFin },
-      horaFin: { $gt: nuevaHoraInicio },
+      horaInicio: nuevaHoraInicio,
     });
 
     if (reservaExistente) {
       return res.status(409).json({
-        mensaje: "La cancha ya está reservada en ese horario",
+        mensaje: "La cancha ya está reservada en ese turno",
       });
     }
 
-    let nuevoEstado = reserva.estado;
-
-    if (req.usuario.rol === "admin" && req.body.estado) {
-      nuevoEstado = req.body.estado;
-    }
+    // ==========================================
+    // ACTUALIZAR RESERVA
+    // ==========================================
 
     reserva.cancha = canchaId;
     reserva.fecha = fechaReserva;
     reserva.horaInicio = nuevaHoraInicio;
     reserva.horaFin = nuevaHoraFin;
-
     reserva.precio = canchaEncontrada.precio;
-
-    reserva.estado = nuevoEstado;
 
     await reserva.save();
 
@@ -284,6 +350,69 @@ export const borrarReservaPorID = async (req, res) => {
 
     return res.status(500).json({
       mensaje: "Ocurrió un error al cancelar la reserva",
+    });
+  }
+};
+export const obtenerDisponibilidad = async (req, res) => {
+  try {
+    const { cancha, fecha } = req.params;
+
+    // Verificar que la cancha exista
+    const canchaEncontrada = await Cancha.findById(cancha);
+
+    if (!canchaEncontrada) {
+      return res.status(404).json({
+        mensaje: "No se encontró la cancha indicada",
+      });
+    }
+    // Preparar la fecha en horario local
+    const [anio, mes, dia] = fecha.split("-").map(Number);
+
+    const fechaConsulta = new Date(anio, mes - 1, dia);
+    fechaConsulta.setHours(0, 0, 0, 0);
+
+    // Buscar reservas de esa cancha y fecha
+    const reservas = await Reserva.find({
+      cancha,
+      fecha: fechaConsulta,
+      estado: { $ne: "cancelada" },
+    }).select("horaInicio horaFin");
+
+    // Generar turnos de 08:00 a 00:00
+    const turnos = [];
+
+    for (let hora = 8; hora <= 23; hora++) {
+      const horaInicio = `${String(hora).padStart(2, "0")}:00`;
+
+      let horaFin;
+
+      if (hora === 23) {
+        horaFin = "00:00";
+      } else {
+        horaFin = `${String(hora + 1).padStart(2, "0")}:00`;
+      }
+
+      const reservado = reservas.some(
+        (reserva) => reserva.horaInicio === horaInicio,
+      );
+
+      turnos.push({
+        horaInicio,
+        horaFin,
+        disponible: !reservado,
+      });
+    }
+
+    return res.status(200).json({
+      cancha: canchaEncontrada.nombre,
+      fecha,
+      turnos,
+    });
+  } catch (error) {
+    console.error("Error al obtener disponibilidad:", error);
+
+    return res.status(500).json({
+      mensaje: "Ocurrió un error al obtener la disponibilidad",
     });
   }
 };
