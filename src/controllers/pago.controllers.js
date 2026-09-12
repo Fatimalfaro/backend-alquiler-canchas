@@ -106,7 +106,7 @@ export const recibirWebhook = async (req, res) => {
         const ordenActualizada = await Orden.findByIdAndUpdate(
           pagoData.external_reference,
           {
-            estado: "aprobado",
+            estado: "aprobada",
             paymentId: paymentId,
           },
           { new: true }
