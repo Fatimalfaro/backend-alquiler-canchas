@@ -25,7 +25,7 @@ export const agregarAlCarrito = async (req, res) => {
         });
        }
        await carrito.save();
-       await carrito.populate("items.producto", "nombreProducto precio imagen");
+       await carrito.populate("items.producto", "nombreProducto precio imagen descripcion");
        res.status(200).json({ mensaje: 'Producto agregado al carrito exitosamente', carrito });
 
     }catch(error){
@@ -39,7 +39,7 @@ export const obtenerCarrito = async (req, res) => {
         const usuarioId = req.usuario.id;
         const carrito = await buscarOcrearCarrito(usuarioId);
         
-        await carrito.populate("items.producto", "nombreProducto precio imagen");
+        await carrito.populate("items.producto", "nombreProducto precio imagen descripcion");
         
         res.status(200).json(carrito);
 
@@ -81,7 +81,7 @@ export const restarCantidadProducto = async (req, res) => {
        }
 
       await carrito.save() 
-      await carrito.populate('items.producto', 'nombreProducto precio imagen')
+      await carrito.populate('items.producto', 'nombreProducto precio imagen descripcion')
       res.status(200).json({mensaje: 'Cantidad actualizada correctamente', carrito})
 
     }catch(error){
@@ -99,7 +99,7 @@ export const eliminarProductoCarrito = async (req, res) => {
         carrito.items = carrito.items.filter((item) => item.producto.toString() !== productoId);
 
         await carrito.save();
-        await carrito.populate("items.producto", "nombreProducto precio imagen");
+        await carrito.populate("items.producto", "nombreProducto precio imagen descripcion");
         res.status(200).json({ mensaje: 'Producto eliminado del carrito exitosamente' });
     }
     catch(error){
