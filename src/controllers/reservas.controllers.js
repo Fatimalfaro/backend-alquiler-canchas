@@ -7,12 +7,6 @@ export const crearReserva = async (req, res) => {
 
     const usuario = req.usuario.id;
 
-     if (req.usuario.rol === "admin") {
-      return res.status(403).json({
-        mensaje: "El administrador no puede reservar canchas",
-      });
-    }
-
     const canchaEncontrada = await Cancha.findById(cancha);
 
     if (!canchaEncontrada) {

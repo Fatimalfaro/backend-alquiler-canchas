@@ -6,12 +6,6 @@ export const agregarAlCarrito = async (req, res) => {
     try {
        const { producto, cantidad } = req.body;
        const usuarioId = req.usuario.id;
-
-       if (req.usuario.rol === "admin") {
-    return res.status(403).json({
-        mensaje: "El administrador no puede agregar productos al carrito",
-    });
-}
        
        const productoExistente = await Producto.findById(producto);
        if (!productoExistente) {
