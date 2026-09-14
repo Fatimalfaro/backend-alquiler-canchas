@@ -254,7 +254,7 @@ export const iniciarSesion = async (req, res) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1d",
+        expiresIn: "1h",
       },
     );
 
@@ -262,7 +262,7 @@ export const iniciarSesion = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 60 * 60 * 1000, // 1 hora,
     });
 
     return res.status(200).json({
@@ -309,7 +309,9 @@ export const obtenerUsuarioActual = async (req, res) => {
 
 export const obtenerUsuarios = async (req, res) => {
   try {
-    const usuarios = await Usuario.find().select("-password");
+    const usuarios = await Usuario.find({
+      _id: { $ne: process.env.ADMIN_PRINCIPAL_ID },
+    }).select("-password");
 
     return res.status(200).json(usuarios);
   } catch (error) {
@@ -320,7 +322,6 @@ export const obtenerUsuarios = async (req, res) => {
     });
   }
 };
-
 export const obtenerUsuarioPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -368,40 +369,86 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
+    // Un usuario puede modificar su propia cuenta.
+    // Un admin puede modificar cualquier usuario.
     if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
       return res.status(403).json({
         mensaje: "No tenés permisos para modificar este usuario",
       });
     }
 
+    // Buscar el usuario actual
+    const usuarioActual = await Usuario.findById(id);
+
+    if (!usuarioActual) {
+      return res.status(404).json({
+        mensaje: "Usuario no encontrado",
+      });
+    }
+
+    // Proteger al administrador principal
+    // Nadie puede modificar esta cuenta desde este endpoint.
+    if (
+      usuarioActual._id.toString() === process.env.ADMIN_PRINCIPAL_ID &&
+      req.usuario.id.toString() !== process.env.ADMIN_PRINCIPAL_ID
+    ) {
+      return res.status(403).json({
+        mensaje: "No se puede modificar el administrador principal",
+      });
+    }
+
     const datosActualizar = {};
 
+    let emailCambio = false;
+    let codigoParaEnviar = null;
+
+    // Actualizar nombre
     if (nombre !== undefined) {
       datosActualizar.nombre = nombre;
     }
 
+    // Actualizar apellido
     if (apellido !== undefined) {
       datosActualizar.apellido = apellido;
     }
 
+    // Actualizar email
     if (email !== undefined) {
       const emailNormalizado = email.toLowerCase().trim();
 
-      // Verificar que el nuevo email no pertenezca a otro usuario
-      const emailExistente = await Usuario.findOne({
-        email: emailNormalizado,
-        _id: { $ne: id },
-      });
-
-      if (emailExistente) {
-        return res.status(400).json({
-          mensaje: "El email ya está registrado por otro usuario",
+      // Solo procesar la verificación si realmente cambió el email
+      if (emailNormalizado !== usuarioActual.email) {
+        // Verificar que el nuevo email no pertenezca a otro usuario
+        const emailExistente = await Usuario.findOne({
+          email: emailNormalizado,
+          _id: { $ne: id },
         });
-      }
 
-      datosActualizar.email = emailNormalizado;
+        if (emailExistente) {
+          return res.status(400).json({
+            mensaje: "El email ya está registrado por otro usuario",
+          });
+        }
+
+        // Generar nuevo código de verificación
+        codigoParaEnviar = Math.floor(
+          100000 + Math.random() * 900000,
+        ).toString();
+
+        // Código válido durante 10 minutos
+        const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
+
+        datosActualizar.email = emailNormalizado;
+        datosActualizar.emailVerificado = false;
+        datosActualizar.codigoVerificacion = codigoParaEnviar;
+        datosActualizar.codigoVerificacionExpira = codigoVerificacionExpira;
+        datosActualizar.ultimoCodigoEnviado = new Date();
+
+        emailCambio = true;
+      }
     }
 
+    // Actualizar contraseña
     if (password !== undefined) {
       datosActualizar.password = await bcrypt.hash(password, 10);
     }
@@ -416,12 +463,14 @@ export const actualizarUsuario = async (req, res) => {
       datosActualizar.activo = activo;
     }
 
+    // Verificar que haya algo para actualizar
     if (Object.keys(datosActualizar).length === 0) {
       return res.status(400).json({
         mensaje: "No hay datos válidos para actualizar",
       });
     }
 
+    // Actualizar usuario
     const usuarioActualizado = await Usuario.findByIdAndUpdate(
       id,
       datosActualizar,
@@ -434,6 +483,21 @@ export const actualizarUsuario = async (req, res) => {
     if (!usuarioActualizado) {
       return res.status(404).json({
         mensaje: "Usuario no encontrado",
+      });
+    }
+
+    // Si cambió el email, enviar nuevo código de verificación
+    if (emailCambio) {
+      await enviarCodigoVerificacion(
+        usuarioActualizado.email,
+        codigoParaEnviar,
+      );
+
+      return res.status(200).json({
+        mensaje:
+          "Usuario actualizado correctamente. Se envió un nuevo código de verificación al email.",
+        usuario: usuarioActualizado,
+        requiereVerificacion: true,
       });
     }
 
@@ -460,13 +524,22 @@ export const eliminarUsuario = async (req, res) => {
       });
     }
 
-    const usuarioEliminado = await Usuario.findByIdAndDelete(id);
+    const usuario = await Usuario.findById(id);
 
-    if (!usuarioEliminado) {
+    if (!usuario) {
       return res.status(404).json({
         mensaje: "Usuario no encontrado",
       });
     }
+
+    // Proteger al administrador principal
+    if (usuario._id.toString() === process.env.ADMIN_PRINCIPAL_ID) {
+      return res.status(403).json({
+        mensaje: "No se puede eliminar el administrador principal",
+      });
+    }
+
+    await Usuario.findByIdAndDelete(id);
 
     return res.status(200).json({
       mensaje: "Usuario eliminado correctamente",
@@ -479,7 +552,6 @@ export const eliminarUsuario = async (req, res) => {
     });
   }
 };
-
 export const cerrarSesion = (req, res) => {
   res.clearCookie("token");
 

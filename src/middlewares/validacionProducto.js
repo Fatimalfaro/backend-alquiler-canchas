@@ -13,10 +13,6 @@ const reglasProducto = [
         .isString().withMessage("La descripción debe ser un texto")
         .isLength({min: 5, max: 100}).withMessage("La descripción debe tener entre 5 y 100 caracteres"),
 
-    body("imagen")
-        .isString().withMessage("La imagen debe ser un texto")
-        .matches(/^https:\/\/.+\.(jpg|jpeg|png|webp|avif|svg)$/).withMessage("La imagen debe ser una URL válida que comience con https:// y termine con una extensión de imagen válida (jpg, jpeg, png, webp, avif, svg)"),
-    
     body("categoria")
         .isString().withMessage("La categoría debe ser un texto")
         .isMongoId().withMessage("La categoría debe ser un ID de MongoDB válido")

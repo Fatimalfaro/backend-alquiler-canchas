@@ -13,6 +13,7 @@ const buscarOcrearCarrito = async (usuarioId) => {
         return carrito;
     } catch (error) {
         console.error(error);
+         throw error;
     }
 }
 
