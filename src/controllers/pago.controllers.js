@@ -323,3 +323,23 @@ export const recibirWebhook = async (req, res) => {
     });
   }
 };
+
+export const obtenerMisCompras = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    const ordenes = await Orden.find({
+      usuario: usuarioId,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      ordenes,
+    });
+  } catch (error) {
+    console.error("Error al obtener mis compras:", error);
+
+    res.status(500).json({
+      mensaje: "Ocurrió un error al obtener tus compras",
+    });
+  }
+};
