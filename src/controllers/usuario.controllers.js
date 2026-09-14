@@ -261,10 +261,9 @@ export const iniciarSesion = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000, // 1 hora,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 60 * 60 * 1000, // 1 hora
     });
-
     return res.status(200).json({
       mensaje: "Inicio de sesión exitoso",
       usuario: {
@@ -553,7 +552,11 @@ export const eliminarUsuario = async (req, res) => {
   }
 };
 export const cerrarSesion = (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
 
   return res.status(200).json({
     mensaje: "Sesión cerrada correctamente",
