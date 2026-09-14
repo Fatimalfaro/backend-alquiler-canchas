@@ -17,7 +17,7 @@ export default class Server {
   middlewares() {
     this.app.use(
       cors({
-        origin: "http://localhost:5173",
+        origin: process.env.FRONTEND_URL,
         credentials: true,
       }),
     );
@@ -34,7 +34,7 @@ export default class Server {
 
   listen() {
     this.app.listen(this.PORT, () => {
-      console.info(`Servidor activo en http://localhost:${this.PORT}`);
+      console.info(`Servidor activo en el puerto ${this.PORT}`);
     });
   }
 }
