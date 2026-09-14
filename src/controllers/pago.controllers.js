@@ -57,30 +57,29 @@ export const crearPreferenciaPago = async (req, res) => {
       `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
     );
 
-            const result = await preference.create({
-                body:{
-                    items: itemsMP,
-                    external_reference: nuevaOrden._id.toString(),
-                    notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
-                    back_urls:{
-                        success:`${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
-                        failure:`${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
-                        pending:`${process.env.FRONTEND_URL}/checkout/resultado?status=pending`
-                    },
-                    auto_return: "approved"
-                }
-            })
+    const result = await preference.create({
+      body: {
+        items: itemsMP,
+        external_reference: nuevaOrden._id.toString(),
+        notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
+        back_urls: {
+          success: `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
+          failure: `${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
+          pending: `${process.env.FRONTEND_URL}/checkout/resultado?status=pending`,
+        },
+        auto_return: "approved",
+      },
+    });
 
-            nuevaOrden.preferenceId = result.id
-            await nuevaOrden.save()
+    nuevaOrden.preferenceId = result.id;
+    await nuevaOrden.save();
 
-        res.status(201).json({
-            mensaje: 'La preferencia de pago fue creada con exito',
-            init_point: result.init_point,
-            sandbox_init_point: result.sandbox_init_point,
-            ordenId: nuevaOrden._id
-        }
-        )
+    res.status(201).json({
+      mensaje: "La preferencia de pago fue creada con exito",
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point,
+      ordenId: nuevaOrden._id,
+    });
   } catch (error) {
     console.error(error);
 
@@ -147,7 +146,6 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
         external_reference: reserva._id.toString(),
         notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
         back_urls: {
-        
           success: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=success`,
           failure: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
           pending: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
@@ -191,7 +189,7 @@ export const recibirWebhook = async (req, res) => {
       req.body?.data?.id;
 
     // Si Mercado Pago manda merchant_order,
-    // buscamos el pago dentro de esa orden
+    // buscamos el pago aprobado dentro de esa orden
     if (topicOrType === "merchant_order") {
       const merchantOrderId = req.query.id;
 
@@ -215,53 +213,110 @@ export const recibirWebhook = async (req, res) => {
       }
     }
 
-    // Procesamos el pago
-    if (paymentId) {
-      const payment = new Payment(client);
-
-      const pagoData = await payment.get({
-        id: paymentId,
-      });
-
-      if (pagoData.status === "approved") {
-        const ordenActualizada =
-          await Orden.findByIdAndUpdate(
-            pagoData.external_reference,
-            {
-              estado: "aprobada",
-              paymentId: paymentId,
-            },
-            { new: true }
-          );
-
-        if (ordenActualizada) {
-          const carrito = await buscarOcrearCarrito(
-            ordenActualizada.usuario
-          );
-
-          carrito.items = [];
-
-          await carrito.save();
-
-          console.log(
-            "🛒 Carrito vaciado con éxito para el usuario:",
-            ordenActualizada.usuario
-          );
-        }
-
-        console.log(
-          "✅ Pago aprobado para la Orden:",
-          pagoData.external_reference
-        );
-      }
+    // Si no recibimos paymentId, no podemos consultar el pago
+    if (!paymentId) {
+      console.log("⚠️ Webhook recibido sin paymentId");
+      return res.sendStatus(200);
     }
 
-    return res.sendStatus(200);
-  } catch (error) {
-    console.error(
-      "❌ Error en Webhook:",
-      error.message
+    // Consultamos el pago directamente en Mercado Pago
+    const payment = new Payment(client);
+
+    const pagoData = await payment.get({
+      id: paymentId,
+    });
+
+    console.log("💳 Datos del pago:", {
+      id: pagoData.id,
+      status: pagoData.status,
+      external_reference: pagoData.external_reference,
+    });
+
+    // Solo procesamos pagos aprobados
+    if (pagoData.status !== "approved") {
+      console.log(
+        "⏳ El pago todavía no está aprobado:",
+        pagoData.status
+      );
+
+      return res.sendStatus(200);
+    }
+
+    const externalReference = pagoData.external_reference;
+
+    // =====================================================
+    // 1. BUSCAR SI EL PAGO CORRESPONDE A UNA RESERVA
+    // =====================================================
+
+    const reservaActualizada = await Reserva.findByIdAndUpdate(
+      externalReference,
+      {
+        estado: "confirmada",
+      },
+      {
+        new: true,
+      }
     );
+
+    if (reservaActualizada) {
+      console.log(
+        "✅ Reserva confirmada:",
+        reservaActualizada._id.toString()
+      );
+
+      return res.sendStatus(200);
+    }
+
+    // =====================================================
+    // 2. SI NO ES RESERVA, BUSCAR SI ES UNA ORDEN
+    // =====================================================
+
+    const ordenActualizada = await Orden.findByIdAndUpdate(
+      externalReference,
+      {
+        estado: "aprobada",
+        paymentId: paymentId,
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (ordenActualizada) {
+      const carrito = await buscarOcrearCarrito(
+        ordenActualizada.usuario
+      );
+
+      carrito.items = [];
+
+      await carrito.save();
+
+      console.log(
+        "🛒 Carrito vaciado con éxito para el usuario:",
+        ordenActualizada.usuario
+      );
+
+      console.log(
+        "✅ Pago aprobado para la Orden:",
+        externalReference
+      );
+
+      return res.sendStatus(200);
+    }
+
+    // =====================================================
+    // 3. NO SE ENCONTRÓ NI RESERVA NI ORDEN
+    // =====================================================
+
+    console.log(
+      "⚠️ No se encontró Reserva ni Orden para external_reference:",
+      externalReference
+    );
+
+    return res.sendStatus(200);
+
+  } catch (error) {
+    console.error("❌ Error en Webhook:", error.message);
 
     return res.status(500).json({
       error: error.message,
