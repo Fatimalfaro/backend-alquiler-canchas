@@ -42,6 +42,11 @@ const canchaSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    
+    activo: {
+      type: Boolean,
+      default: true, // Cada cancha nueva que crees arranca estando activa
+    },
   },
   {
     timestamps: true,
