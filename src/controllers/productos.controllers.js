@@ -3,28 +3,49 @@ import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
 
 export const agregarProducto = async (req, res) => {
     try {
+
+        const productoExistente = await Producto.findOne({
+            nombreProducto: req.body.nombreProducto.trim()
+        });
+
+        if (productoExistente) {
+            return res.status(409).json({
+                message: "No se puede agregar un producto con el mismo nombre."
+            });
+        }
+
         let imagenUrl = "";
-        if(req.file){
+
+        if (req.file) {
             const resultado = await subirImagenACloudinary(req.file.buffer);
             imagenUrl = resultado.secure_url;
-        }else{
-            imagenUrl = "https://images.pexels.com/photos/9853347/pexels-photo-9853347.jpeg";
+        } else {
+            imagenUrl =
+                "https://images.pexels.com/photos/9853347/pexels-photo-9853347.jpeg";
         }
+
         const nuevoProductoData = {
             ...req.body,
+            nombreProducto: req.body.nombreProducto.trim(),
             imagen: imagenUrl,
         };
 
         const producto = new Producto(nuevoProductoData);
+
         await producto.save();
 
-        res.status(201).json({ message: 'Producto agregado exitosamente' });
+        res.status(201).json({
+            message: "Producto agregado exitosamente"
+        });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Ocurrio un error al intentar agregar un producto' });
+
+        res.status(500).json({
+            message: "Ocurrió un error al intentar agregar un producto"
+        });
     }
-}
+};
 
 export const listarProductos = async (req, res) => {
     try {
