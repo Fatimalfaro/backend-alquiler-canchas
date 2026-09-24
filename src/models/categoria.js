@@ -9,6 +9,10 @@ const categoriaSchema = new mongoose.Schema({
         maxlength: 100,
         trim: true
     },
+    activo: {
+      type: Boolean,
+      default: true, 
+    },
 },
 {
     timestamps: true,
