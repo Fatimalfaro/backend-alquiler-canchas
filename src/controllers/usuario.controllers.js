@@ -308,11 +308,29 @@ export const obtenerUsuarioActual = async (req, res) => {
 
 export const obtenerUsuarios = async (req, res) => {
   try {
-    const usuarios = await Usuario.find({
-      _id: { $ne: process.env.ADMIN_PRINCIPAL_ID },
-    }).select("-password");
+    const numeroPagina = parseInt(req.query.pagina) || 1;
+    const cantUsuarios = parseInt(req.query.limite) || 6;
+    const salto = (numeroPagina - 1) * cantUsuarios;
 
-    return res.status(200).json(usuarios);
+    const query = {
+      _id: { $ne: process.env.ADMIN_PRINCIPAL_ID },
+    };
+
+    const [usuarios, cantidadUsuarios] = await Promise.all([
+      Usuario.find(query)
+        .select("-password")
+        .skip(salto)
+        .limit(cantUsuarios),
+
+      Usuario.countDocuments(query),
+    ]);
+
+    return res.status(200).json({
+      usuarios,
+      cantidadUsuarios,
+      pagina: numeroPagina,
+      limite: cantUsuarios,
+    });
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
 
