@@ -92,24 +92,37 @@ export const crearReserva = async (req, res) => {
 
 export const listarReservas = async (req, res) => {
   try {
-    let filtro = {};
+    const numeroPagina = parseInt(req.query.pagina) || 1;
+    const cantReservas = parseInt(req.query.limite) || 6;
+    const salto = (numeroPagina - 1) * cantReservas;
+
+    const query = {};
 
     if (req.usuario.rol !== "admin") {
-      filtro.usuario = req.usuario.id;
+      query.usuario = req.usuario.id;
     }
 
-    const reservas = await Reserva.find(filtro)
-      .populate("usuario", "nombre apellido email")
-      .populate("cancha", "nombre tipo precio")
-      .sort({ fecha: 1, horaInicio: 1 });
+    const [reservas, cantidadReservas] = await Promise.all([
+      Reserva.find(query)
+        .populate("usuario", "nombre apellido email")
+        .populate("cancha", "nombre tipo precio")
+        .sort({ fecha: 1, horaInicio: 1 })
+        .skip(salto)
+        .limit(cantReservas),
 
-    return res.status(200).json({
+      Reserva.countDocuments(query),
+    ]);
+
+    res.status(200).json({
       reservas,
+      cantidadReservas,
+      pagina: numeroPagina,
+      limite: cantReservas,
     });
   } catch (error) {
     console.error("Error al listar reservas:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
       mensaje: "Ocurrió un error al listar las reservas",
     });
   }
