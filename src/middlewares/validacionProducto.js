@@ -24,7 +24,7 @@ const reglasProducto = [
     body("descripcion")
         .isString().withMessage("La descripción debe ser un texto")
         .trim()
-        .isLength({min: 5, max: 100}).withMessage("La descripción debe tener entre 5 y 100 caracteres"),
+        .isLength({min: 5, max: 500}).withMessage("La descripción debe tener entre 5 y 500 caracteres"),
 
     body("categoria")
         .isString().withMessage("La categoría debe ser un texto")
