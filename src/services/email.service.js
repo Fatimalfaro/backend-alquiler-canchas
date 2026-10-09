@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 });
 export const enviarCodigoVerificacion = async (email, codigo) => {
   await transporter.sendMail({
-    from: '"Alquiler de Canchas" <no-reply@alquiler-canchas.com>',
+    from: '"Alquiler de Canchas" <almarazabeljesus@gmail.com>',
     to: email,
     subject: "Código de verificación",
     text: `Tu código de verificación es: ${codigo}. Este código tiene una validez de 10 minutos.`,
