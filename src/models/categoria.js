@@ -1,20 +1,25 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const categoriaSchema = new mongoose.Schema({
+const categoriaSchema = new mongoose.Schema(
+  {
     nombreCategoria: {
-        type: String,
-        unique: true,
-        required: true,
-        minlength: 5,
-        maxlength: 100,
-        trim: true
+      type: String,
+      unique: true,
+      required: true,
+      minlength: 5,
+      maxlength: 100,
+      trim: true,
     },
-},
-{
+    activo: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
     timestamps: true,
-}
+  },
 );
 
-const Categoria = mongoose.model('categoria', categoriaSchema);
+const Categoria = mongoose.model("categoria", categoriaSchema);
 
 export default Categoria;

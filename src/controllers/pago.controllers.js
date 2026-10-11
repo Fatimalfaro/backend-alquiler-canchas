@@ -188,8 +188,7 @@ export const recibirWebhook = async (req, res) => {
       req.query["data.id"] ||
       req.body?.data?.id;
 
-    // Si Mercado Pago manda merchant_order,
-    // buscamos el pago aprobado dentro de esa orden
+   
     if (topicOrType === "merchant_order") {
       const merchantOrderId = req.query.id;
 
@@ -213,13 +212,13 @@ export const recibirWebhook = async (req, res) => {
       }
     }
 
-    // Si no recibimos paymentId, no podemos consultar el pago
+    
     if (!paymentId) {
       console.log("⚠️ Webhook recibido sin paymentId");
       return res.sendStatus(200);
     }
 
-    // Consultamos el pago directamente en Mercado Pago
+    
     const payment = new Payment(client);
 
     const pagoData = await payment.get({
@@ -232,7 +231,7 @@ export const recibirWebhook = async (req, res) => {
       external_reference: pagoData.external_reference,
     });
 
-    // Solo procesamos pagos aprobados
+    
     if (pagoData.status !== "approved") {
       console.log(
         "⏳ El pago todavía no está aprobado:",
@@ -244,9 +243,6 @@ export const recibirWebhook = async (req, res) => {
 
     const externalReference = pagoData.external_reference;
 
-    // =====================================================
-    // 1. BUSCAR SI EL PAGO CORRESPONDE A UNA RESERVA
-    // =====================================================
 
     const reservaActualizada = await Reserva.findByIdAndUpdate(
       externalReference,
@@ -267,9 +263,6 @@ export const recibirWebhook = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // =====================================================
-    // 2. SI NO ES RESERVA, BUSCAR SI ES UNA ORDEN
-    // =====================================================
 
     const ordenActualizada = await Orden.findByIdAndUpdate(
       externalReference,
@@ -304,9 +297,6 @@ export const recibirWebhook = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // =====================================================
-    // 3. NO SE ENCONTRÓ NI RESERVA NI ORDEN
-    // =====================================================
 
     console.log(
       "⚠️ No se encontró Reserva ni Orden para external_reference:",

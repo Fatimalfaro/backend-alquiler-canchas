@@ -30,8 +30,6 @@ const canchaSchema = new Schema(
       trim: true,
     },
 
-  
-
     tipo: {
       type: String,
       required: true,
@@ -39,6 +37,11 @@ const canchaSchema = new Schema(
     },
 
     disponible: {
+      type: Boolean,
+      default: true,
+    },
+
+    activo: {
       type: Boolean,
       default: true,
     },

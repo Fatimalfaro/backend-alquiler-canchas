@@ -1039,7 +1039,7 @@ Cloudinary devuelve una URL segura (`secure_url`) que se almacena en MongoDB.
 
 # 📧 Verificación de correo
 
-El proyecto utiliza **Nodemailer + Mailtrap** para realizar las pruebas de envío de correos.
+El proyecto utiliza **Nodemailer + Brevo** para realizar las pruebas de envío de correos.
 
 El flujo es:
 
@@ -1067,9 +1067,9 @@ El código tiene:
 
 ---
 
-# 📬 Mailtrap
+# 📬 Brevo
 
-Mailtrap se utiliza como servicio SMTP durante el desarrollo para probar el envío de los correos electrónicos.
+Brevo se utiliza como servicio SMTP durante el desarrollo para probar el envío de los correos electrónicos.
 
 Variables utilizadas:
 

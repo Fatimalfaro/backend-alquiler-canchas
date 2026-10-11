@@ -25,9 +25,7 @@ export const validacionReserva = [
 ];
 
 export const validacionIDReserva = [
-  param("id")
-    .isMongoId()
-    .withMessage("El ID de la reserva no es válido"),
+  param("id").isMongoId().withMessage("El ID de la reserva no es válido"),
 
   resultadoValidacion,
 ];
@@ -38,10 +36,7 @@ export const validacionPatchReserva = [
     .isMongoId()
     .withMessage("El ID de la cancha no es válido"),
 
-  body("fecha")
-    .optional()
-    .isISO8601()
-    .withMessage("La fecha no es válida"),
+  body("fecha").optional().isISO8601().withMessage("La fecha no es válida"),
 
   body("horaInicio")
     .optional()

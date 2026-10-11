@@ -36,13 +36,13 @@ export const agregarCancha = async (req, res) => {
 
 export const listarCanchas = async (req, res) => {
   try {
-    const { termino} = req.query;
+    const { termino } = req.query;
 
-    const numeroPagina = parseInt(req.query.pagina)||1;
-    const cantCanchas = parseInt(req.query.limite)||8;
+    const numeroPagina = parseInt(req.query.pagina) || 1;
+    const cantCanchas = parseInt(req.query.limite) || 6;
     const salto = (numeroPagina - 1) * cantCanchas;
 
-    const query = {};
+    const query = { activo: true };
 
     if (termino) {
       query.nombre = {
@@ -93,7 +93,15 @@ export const buscarCanchaPorID = async (req, res) => {
 
 export const borrarCanchaPorID = async (req, res) => {
   try {
-    const canchaBorrada = await Cancha.findByIdAndDelete(req.params.id);
+    // REEMPLAZADO: En lugar de eliminar, cambiamos 'activo' y 'disponible' a false
+    const canchaBorrada = await Cancha.findByIdAndUpdate(
+      req.params.id,
+      {
+        activo: false,
+        disponible: false,
+      },
+      { new: true },
+    );
 
     if (!canchaBorrada) {
       return res.status(404).json({
@@ -102,7 +110,7 @@ export const borrarCanchaPorID = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "La cancha se eliminó correctamente",
+      message: "La cancha se eliminó correctamente de forma lógica",
     });
   } catch (error) {
     console.error(error);
@@ -123,14 +131,12 @@ export const editarCanchaPorID = async (req, res) => {
       });
     }
 
-    // Actualizamos los campos enviados
     cancha.nombre = req.body.nombre;
     cancha.descripcion = req.body.descripcion;
     cancha.precio = req.body.precio;
     cancha.tipo = req.body.tipo;
     cancha.disponible = req.body.disponible;
 
-    // Si se seleccionó una nueva imagen, la subimos a Cloudinary
     if (req.file) {
       const resultado = await subirImagenACloudinary(req.file.buffer);
 
