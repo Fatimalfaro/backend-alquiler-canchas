@@ -891,7 +891,15 @@ Elimina completamente el producto del carrito.
 # 💳 Mercado Pago
 
 El backend utiliza Mercado Pago para procesar los pagos de productos y reservas.
-
+## Tarjeta de Prueba
+```http
+Numero de tarjeta: 3711 803032 57522
+Nombre del titular: APRO
+Vencimiento: 11/30
+Codigo de seguridad: 1234
+DNI: 12345678
+Correo:ESTUSER2310962352775634707@testuser.com
+```
 ## Crear preferencia para productos
 
 ```http
@@ -1405,14 +1413,6 @@ http://localhost:3003/api/canchas
 Email: admin@example.com
 Password: 12345678
 Rol: admin
-```
-
-### Usuario común
-
-```text
-Email: jose207@gmail.com
-Password: 12345678
-Rol: usuario
 ```
 
 ---
