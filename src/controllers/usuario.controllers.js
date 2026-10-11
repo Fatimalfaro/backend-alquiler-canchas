@@ -164,7 +164,6 @@ export const reenviarCodigoVerificacion = async (req, res) => {
       });
     }
 
-    // Esperar 60 segundos entre códigos
     if (usuario.ultimoCodigoEnviado) {
       const segundosTranscurridos =
         (Date.now() - usuario.ultimoCodigoEnviado.getTime()) / 1000;
@@ -182,7 +181,6 @@ export const reenviarCodigoVerificacion = async (req, res) => {
       100000 + Math.random() * 900000,
     ).toString();
 
-    // Nueva expiración: 10 minutos
     const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
 
     usuario.codigoVerificacion = codigoVerificacion;
@@ -317,10 +315,7 @@ export const obtenerUsuarios = async (req, res) => {
     };
 
     const [usuarios, cantidadUsuarios] = await Promise.all([
-      Usuario.find(query)
-        .select("-password")
-        .skip(salto)
-        .limit(cantUsuarios),
+      Usuario.find(query).select("-password").skip(salto).limit(cantUsuarios),
 
       Usuario.countDocuments(query),
     ]);
@@ -349,8 +344,6 @@ export const obtenerUsuarioPorId = async (req, res) => {
       });
     }
 
-    // Un usuario puede consultar su propio perfil.
-    // Un admin puede consultar cualquier usuario.
     if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
       return res.status(403).json({
         mensaje: "No tenés permisos para consultar este usuario",
@@ -386,15 +379,12 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Un usuario puede modificar su propia cuenta.
-    // Un admin puede modificar cualquier usuario.
     if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
       return res.status(403).json({
         mensaje: "No tenés permisos para modificar este usuario",
       });
     }
 
-    // Buscar el usuario actual
     const usuarioActual = await Usuario.findById(id);
 
     if (!usuarioActual) {
@@ -403,8 +393,6 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Proteger al administrador principal
-    // Nadie puede modificar esta cuenta desde este endpoint.
     if (
       usuarioActual._id.toString() === process.env.ADMIN_PRINCIPAL_ID &&
       req.usuario.id.toString() !== process.env.ADMIN_PRINCIPAL_ID
@@ -419,23 +407,18 @@ export const actualizarUsuario = async (req, res) => {
     let emailCambio = false;
     let codigoParaEnviar = null;
 
-    // Actualizar nombre
     if (nombre !== undefined) {
       datosActualizar.nombre = nombre;
     }
 
-    // Actualizar apellido
     if (apellido !== undefined) {
       datosActualizar.apellido = apellido;
     }
 
-    // Actualizar email
     if (email !== undefined) {
       const emailNormalizado = email.toLowerCase().trim();
 
-      // Solo procesar la verificación si realmente cambió el email
       if (emailNormalizado !== usuarioActual.email) {
-        // Verificar que el nuevo email no pertenezca a otro usuario
         const emailExistente = await Usuario.findOne({
           email: emailNormalizado,
           _id: { $ne: id },
@@ -447,12 +430,10 @@ export const actualizarUsuario = async (req, res) => {
           });
         }
 
-        // Generar nuevo código de verificación
         codigoParaEnviar = Math.floor(
           100000 + Math.random() * 900000,
         ).toString();
 
-        // Código válido durante 10 minutos
         const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
 
         datosActualizar.email = emailNormalizado;
@@ -465,29 +446,24 @@ export const actualizarUsuario = async (req, res) => {
       }
     }
 
-    // Actualizar contraseña
     if (password !== undefined) {
       datosActualizar.password = await bcrypt.hash(password, 10);
     }
 
-    // Solo admin puede modificar rol
     if (req.usuario.rol === "admin" && rol !== undefined) {
       datosActualizar.rol = rol;
     }
 
-    // Solo admin puede activar/desactivar usuarios
     if (req.usuario.rol === "admin" && activo !== undefined) {
       datosActualizar.activo = activo;
     }
 
-    // Verificar que haya algo para actualizar
     if (Object.keys(datosActualizar).length === 0) {
       return res.status(400).json({
         mensaje: "No hay datos válidos para actualizar",
       });
     }
 
-    // Actualizar usuario
     const usuarioActualizado = await Usuario.findByIdAndUpdate(
       id,
       datosActualizar,
@@ -503,7 +479,6 @@ export const actualizarUsuario = async (req, res) => {
       });
     }
 
-    // Si cambió el email, enviar nuevo código de verificación
     if (emailCambio) {
       await enviarCodigoVerificacion(
         usuarioActualizado.email,
@@ -549,7 +524,6 @@ export const eliminarUsuario = async (req, res) => {
       });
     }
 
-    // Proteger al administrador principal
     if (usuario._id.toString() === process.env.ADMIN_PRINCIPAL_ID) {
       return res.status(403).json({
         mensaje: "No se puede eliminar el administrador principal",

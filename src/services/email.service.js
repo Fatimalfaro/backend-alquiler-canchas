@@ -23,4 +23,4 @@ export const enviarCodigoVerificacion = async (email, codigo) => {
       <p>Este código tiene una validez de 10 minutos.</p>
     `,
   });
-}
+};

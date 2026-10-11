@@ -16,9 +16,7 @@ export const validacionCategoria = [
 ];
 
 export const validacionIDCategoria = [
-  param("id")
-    .isMongoId()
-    .withMessage("El ID de la categoría no es válido"),
+  param("id").isMongoId().withMessage("El ID de la categoría no es válido"),
 
   resultadoValidacion,
 ];

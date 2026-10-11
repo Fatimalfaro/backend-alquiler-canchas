@@ -36,9 +36,7 @@ export const validacionCancha = [
   resultadoValidacion,
 ];
 export const validacionIDCancha = [
-  param("id")
-    .isMongoId()
-    .withMessage("El ID de la cancha no es válido"),
+  param("id").isMongoId().withMessage("El ID de la cancha no es válido"),
 
   resultadoValidacion,
 ];

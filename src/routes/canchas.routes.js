@@ -25,12 +25,12 @@ router
   .get(listarCanchas)
 
   .post(
-  verificarToken,
-  verificarRol("admin"),
-  upload.single("imagen"),
-  validacionCancha,
-  agregarCancha,
-)
+    verificarToken,
+    verificarRol("admin"),
+    upload.single("imagen"),
+    validacionCancha,
+    agregarCancha,
+  );
 router
   .route("/:id")
 
@@ -43,22 +43,22 @@ router
     borrarCanchaPorID,
   )
 
- .put(
-  verificarToken,
-  verificarRol("admin"),
-  upload.single("imagen"),
-  validacionIDCancha,
-  validacionCancha,
-  editarCanchaPorID,
-)
+  .put(
+    verificarToken,
+    verificarRol("admin"),
+    upload.single("imagen"),
+    validacionIDCancha,
+    validacionCancha,
+    editarCanchaPorID,
+  )
 
- .patch(
-  verificarToken,
-  verificarRol("admin"),
-  upload.single("imagen"),
-  validacionIDCancha,
-  validacionPatchCancha,
-  editarCanchaPorID,
-);
+  .patch(
+    verificarToken,
+    verificarRol("admin"),
+    upload.single("imagen"),
+    validacionIDCancha,
+    validacionPatchCancha,
+    editarCanchaPorID,
+  );
 
 export default router;

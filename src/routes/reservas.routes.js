@@ -6,7 +6,7 @@ import {
   buscarReservaPorID,
   editarReservaPorID,
   borrarReservaPorID,
-   obtenerDisponibilidad,
+  obtenerDisponibilidad,
 } from "../controllers/reservas.controllers.js";
 
 import {
