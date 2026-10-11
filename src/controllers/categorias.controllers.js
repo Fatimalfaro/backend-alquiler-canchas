@@ -15,14 +15,14 @@ export const crearCategoria = async (req, res) => {
 export const listarCategorias = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    
-    const limit = parseInt(req.query.limit) || 6; 
-    
+
+    const limit = parseInt(req.query.limit) || 6;
+
     const skip = (page - 1) * limit;
 
     const [categorias, totalCategorias] = await Promise.all([
       Categoria.find({ activo: true }).skip(skip).limit(limit),
-      Categoria.countDocuments({ activo: true })
+      Categoria.countDocuments({ activo: true }),
     ]);
 
     const totalPages = Math.ceil(totalCategorias / limit);
@@ -35,8 +35,8 @@ export const listarCategorias = async (req, res) => {
         currentPage: page,
         pageSize: limit,
         hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
-      }
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -45,7 +45,6 @@ export const listarCategorias = async (req, res) => {
       .json({ message: "Ocurrió un error al intentar listar las categorías" });
   }
 };
-
 
 export const buscarCategoriaPorID = async (req, res) => {
   try {

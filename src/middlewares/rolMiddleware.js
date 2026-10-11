@@ -1,4 +1,3 @@
-
 export const verificarRol = (rolRequerido) => {
   return (req, res, next) => {
     if (!req.usuario) {
@@ -16,4 +15,3 @@ export const verificarRol = (rolRequerido) => {
     next();
   };
 };
-

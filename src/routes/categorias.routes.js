@@ -31,11 +31,7 @@ router
 
 router
   .route("/:id")
-  .get(
-    verificarToken,
-    validacionIDCategoria,
-    buscarCategoriaPorID,
-  )
+  .get(verificarToken, validacionIDCategoria, buscarCategoriaPorID)
   .delete(
     verificarToken,
     verificarRol("admin"),

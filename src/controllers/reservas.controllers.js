@@ -175,7 +175,6 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    // Verificar permisos
     if (
       req.usuario.rol !== "admin" &&
       reserva.usuario.toString() !== req.usuario.id.toString()
@@ -184,10 +183,6 @@ export const editarReservaPorID = async (req, res) => {
         mensaje: "No tenés permisos para editar esta reserva",
       });
     }
-
-    // ==========================================
-    // CAMBIO DE ESTADO POR PARTE DEL ADMIN
-    // ==========================================
 
     if (req.usuario.rol === "admin" && req.body.estado) {
       const estadosPermitidos = ["pendiente", "confirmada", "cancelada"];
@@ -212,10 +207,6 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // EDICIÓN NORMAL DE CANCHA / FECHA / HORARIO
-    // ==========================================
-
     const canchaId = req.body.cancha || reserva.cancha;
 
     const nuevaHoraInicio = req.body.horaInicio || reserva.horaInicio;
@@ -234,10 +225,6 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // FECHA
-    // ==========================================
-
     let fechaReserva;
 
     if (req.body.fecha) {
@@ -250,10 +237,6 @@ export const editarReservaPorID = async (req, res) => {
       fechaReserva.setHours(0, 0, 0, 0);
     }
 
-    // ==========================================
-    // VALIDAR FECHA PASADA
-    // ==========================================
-
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
@@ -262,10 +245,6 @@ export const editarReservaPorID = async (req, res) => {
         mensaje: "No se puede reservar una fecha pasada",
       });
     }
-
-    // ==========================================
-    // CALCULAR HORA FIN
-    // ==========================================
 
     const [hora, minutos] = nuevaHoraInicio.split(":").map(Number);
 
@@ -282,10 +261,6 @@ export const editarReservaPorID = async (req, res) => {
       )}:${String(minutos).padStart(2, "0")}`;
     }
 
-    // ==========================================
-    // VERIFICAR DOBLE RESERVA
-    // ==========================================
-
     const reservaExistente = await Reserva.findOne({
       _id: { $ne: id },
       cancha: canchaId,
@@ -299,10 +274,6 @@ export const editarReservaPorID = async (req, res) => {
         mensaje: "La cancha ya está reservada en ese turno",
       });
     }
-
-    // ==========================================
-    // ACTUALIZAR RESERVA
-    // ==========================================
 
     reserva.cancha = canchaId;
     reserva.fecha = fechaReserva;
@@ -370,7 +341,6 @@ export const obtenerDisponibilidad = async (req, res) => {
   try {
     const { cancha, fecha } = req.params;
 
-    // Verificar que la cancha exista
     const canchaEncontrada = await Cancha.findById(cancha);
 
     if (!canchaEncontrada) {
@@ -378,20 +348,18 @@ export const obtenerDisponibilidad = async (req, res) => {
         mensaje: "No se encontró la cancha indicada",
       });
     }
-    // Preparar la fecha en horario local
+
     const [anio, mes, dia] = fecha.split("-").map(Number);
 
     const fechaConsulta = new Date(anio, mes - 1, dia);
     fechaConsulta.setHours(0, 0, 0, 0);
 
-    // Buscar reservas de esa cancha y fecha
     const reservas = await Reserva.find({
       cancha,
       fecha: fechaConsulta,
       estado: { $ne: "cancelada" },
     }).select("horaInicio horaFin");
 
-    // Generar turnos de 08:00 a 00:00
     const turnos = [];
 
     for (let hora = 8; hora <= 23; hora++) {

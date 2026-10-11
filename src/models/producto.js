@@ -1,45 +1,46 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const productoSchema = new Schema({
-  nombreProducto: {
-    type: String,
-    unique: true,
-    required: true,
-    minlength: 3,
-    maxlength: 50,
-    trim: true
+const productoSchema = new Schema(
+  {
+    nombreProducto: {
+      type: String,
+      unique: true,
+      required: true,
+      minlength: 3,
+      maxlength: 50,
+      trim: true,
+    },
+    descripcion: {
+      type: String,
+      required: true,
+      minlength: 5,
+      maxlength: 500,
+      trim: true,
+    },
+    precio: {
+      type: Number,
+      required: true,
+    },
+    imagen: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (valor) => {
+          return /^https:\/\/.+\.(jpg|jpeg|png|webp|avif|svg)$/.test(valor);
+        },
+      },
+    },
+    categoria: {
+      type: Schema.Types.ObjectId,
+      ref: "categoria",
+      required: true,
+    },
   },
-  descripcion: {
-    type: String,
-    required: true,
-    minlength: 5,
-    maxlength: 500,
-    trim: true
+  {
+    timestamps: true,
   },
-  precio: {
-    type: Number,
-    required: true
-  },
-  imagen:{
-    type: String,
-    required: true,
-    validate:{
-        validator:(valor) => {
-             return /^https:\/\/.+\.(jpg|jpeg|png|webp|avif|svg)$/.test(valor);
-        }
-    }
-
-  },
-  categoria:{
-    type: Schema.Types.ObjectId,
-    ref: "categoria",
-    required: true
-  }
-},
-{
-  timestamps: true
-});
+);
 
 const Producto = mongoose.model("producto", productoSchema);
 
-export default Producto
+export default Producto;
