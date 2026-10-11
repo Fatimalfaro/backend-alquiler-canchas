@@ -4,10 +4,14 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   host: process.env.MAILTRAP_HOST,
   port: Number(process.env.MAILTRAP_PORT),
+  secure: Number(process.env.MAILTRAP_PORT) === 465,
   auth: {
     user: process.env.MAILTRAP_USER,
     pass: process.env.MAILTRAP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 export const enviarCodigoVerificacion = async (email, codigo) => {
   await transporter.sendMail({
