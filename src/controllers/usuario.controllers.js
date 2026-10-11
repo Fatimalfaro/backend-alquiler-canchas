@@ -16,16 +16,31 @@ export const registrarUsuario = async (req, res) => {
 
     const emailNormalizado = email.toLowerCase().trim();
 
-    const usuarioExistente = await Usuario.findOne({
-      email: emailNormalizado,
+const usuarioExistente = await Usuario.findOne({
+  email: emailNormalizado,
+});
+
+if (usuarioExistente) {
+  
+  if (usuarioExistente.emailVerificado) {
+    return res.status(400).json({
+      mensaje: "El email ya está registrado y verificado.",
     });
+  }
 
-    if (usuarioExistente) {
-      return res.status(400).json({
-        mensaje: "El email ya está registrado",
-      });
-    }
-
+  return res.status(200).json({
+    mensaje:
+      "Tu cuenta ya está registrada, pero falta verificar el email. Revisá tu correo o solicitá un nuevo código.",
+    requiereVerificacion: true,
+    usuario: {
+      id: usuarioExistente._id,
+      nombre: usuarioExistente.nombre,
+      apellido: usuarioExistente.apellido,
+      email: usuarioExistente.email,
+      emailVerificado: usuarioExistente.emailVerificado,
+    },
+  });
+}
     const passwordHash = await bcrypt.hash(password, 10);
 
     const codigoVerificacion = Math.floor(
