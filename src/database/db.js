@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 
-const conectarDB = async () => {
+export const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.info("Conexion a la base de datos exitosa");
+    console.info("Base de datos conectada exitosamente");
   } catch (error) {
-    console.error("Error al conectar a MongoDB:", error);
+    console.error("Error crítico al conectar a MongoDB:", error.message);
+    process.exit(1); // Esto detiene la app inmediatamente si falla
   }
 };
 
-conectarDB();
+connectDB();
