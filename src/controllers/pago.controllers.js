@@ -154,6 +154,9 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
       },
     });
 
+    reserva.preferenceId = result.id;
+    await reserva.save();
+
     return res.status(201).json({
       mensaje: "La preferencia de pago fue creada con éxito",
       init_point: result.init_point,
@@ -174,8 +177,6 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
 export const recibirWebhook = async (req, res) => {
   try {
     console.log("🚨 Webhook de Mercado Pago recibido");
-    console.log("Query params:", req.query);
-    console.log("Body payload:", req.body);
 
     const topicOrType =
       req.query.topic ||
@@ -188,10 +189,8 @@ export const recibirWebhook = async (req, res) => {
       req.query["data.id"] ||
       req.body?.data?.id;
 
-   
     if (topicOrType === "merchant_order") {
       const merchantOrderId = req.query.id;
-
       const respuesta = await fetch(
         `https://api.mercadopago.com/merchant_orders/${merchantOrderId}`,
         {
@@ -200,117 +199,95 @@ export const recibirWebhook = async (req, res) => {
           },
         }
       );
-
       const merchantOrder = await respuesta.json();
-
       const pagoAprobado = merchantOrder.payments?.find(
         (pago) => pago.status === "approved"
       );
-
       if (pagoAprobado) {
         paymentId = pagoAprobado.id;
       }
     }
 
-    
     if (!paymentId) {
       console.log("⚠️ Webhook recibido sin paymentId");
       return res.sendStatus(200);
     }
 
-    
     const payment = new Payment(client);
+    const pagoData = await payment.get({ id: paymentId });
 
-    const pagoData = await payment.get({
-      id: paymentId,
-    });
-
-    console.log("💳 Datos del pago:", {
-      id: pagoData.id,
-      status: pagoData.status,
-      external_reference: pagoData.external_reference,
-    });
-
-    
     if (pagoData.status !== "approved") {
-      console.log(
-        "⏳ El pago todavía no está aprobado:",
-        pagoData.status
-      );
-
+      console.log("⏳ El pago todavía no está aprobado:", pagoData.status);
       return res.sendStatus(200);
     }
 
     const externalReference = pagoData.external_reference;
+    const montoPagado = pagoData.transaction_amount;
+    const monedaPagada = pagoData.currency_id;
 
-
-    const reservaActualizada = await Reserva.findByIdAndUpdate(
-      externalReference,
-      {
-        estado: "confirmada",
-      },
-      {
-        new: true,
+    // 1️⃣ Intentar procesar como RESERVA
+    const reserva = await Reserva.findById(externalReference).populate("cancha", "precio");
+    
+    if (reserva) {
+      // 🔒 IDEMPOTENCIA: Si ya está confirmada, no procesar de nuevo
+      if (reserva.estado === "confirmada") {
+        console.log("ℹ️ La reserva ya estaba confirmada previamente (Idempotencia).");
+        return res.sendStatus(200);
       }
-    );
 
-    if (reservaActualizada) {
-      console.log(
-        "✅ Reserva confirmada:",
-        reservaActualizada._id.toString()
-      );
+      // 🛡️ VALIDACIÓN INTEGRAL: Verificar importe y moneda
+      if (Number(montoPagado) !== Number(reserva.precio) || monedaPagada !== "ARS") {
+        console.error("❌ Discrepancia en montos o moneda para la reserva", {
+          esperado: reserva.precio,
+          recibido: montoPagado,
+        });
+        return res.status(400).json({ error: "El monto o la moneda no coinciden con la reserva" });
+      }
 
+      reserva.estado = "confirmada";
+      reserva.paymentId = paymentId;
+      await reserva.save();
+
+      console.log("✅ Reserva confirmada y trazada con éxito:", reserva._id.toString());
       return res.sendStatus(200);
     }
 
+    // 2️⃣ Si no es reserva, intentar procesar como ORDEN (Carrito)
+    const orden = await Orden.findById(externalReference);
 
-    const ordenActualizada = await Orden.findByIdAndUpdate(
-      externalReference,
-      {
-        estado: "aprobada",
-        paymentId: paymentId,
-      },
-      {
-        new: true,
+    if (orden) {
+      // 🔒 IDEMPOTENCIA: Si la orden ya está aprobada
+      if (orden.estado === "aprobada") {
+        console.log("ℹ️ La orden ya estaba aprobada previamente (Idempotencia).");
+        return res.sendStatus(200);
       }
-    );
 
-    if (ordenActualizada) {
-      const carrito = await buscarOcrearCarrito(
-        ordenActualizada.usuario
-      );
+      // 🛡️ VALIDACIÓN INTEGRAL: Verificar importe y moneda
+      if (Number(montoPagado) !== Number(orden.montoTotal) || monedaPagada !== "ARS") {
+        console.error("❌ Discrepancia en montos o moneda para la orden");
+        return res.status(400).json({ error: "El monto o la moneda no coinciden con la orden" });
+      }
 
-      carrito.items = [];
+      orden.estado = "aprobada";
+      orden.paymentId = paymentId;
+      await orden.save();
 
-      await carrito.save();
+      const carrito = await buscarOcrearCarrito(orden.usuario);
+      if (carrito) {
+        carrito.items = [];
+        await carrito.save();
+      }
 
-      console.log(
-        "🛒 Carrito vaciado con éxito para el usuario:",
-        ordenActualizada.usuario
-      );
-
-      console.log(
-        "✅ Pago aprobado para la Orden:",
-        externalReference
-      );
-
+      console.log("✅ Orden aprobada y carrito vaciado con éxito:", externalReference);
       return res.sendStatus(200);
     }
 
-
-    console.log(
-      "⚠️ No se encontró Reserva ni Orden para external_reference:",
-      externalReference
-    );
-
+    console.log("⚠️ No se encontró Reserva ni Orden para external_reference:", externalReference);
     return res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ Error en Webhook:", error.message);
-
-    return res.status(500).json({
-      error: error.message,
-    });
+    console.error("❌ Error crítico en Webhook:", error.message);
+    return res.status(500).json({ error: error.message });
   }
 };
 

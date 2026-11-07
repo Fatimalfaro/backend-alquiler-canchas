@@ -59,3 +59,4 @@ reservaSchema.index(
     partialFilterExpression: { estado: { $ne: "cancelada" } },
   },
 );
+export default model('Reserva', reservaSchema);
