@@ -1,8 +1,14 @@
-import router from "./src/routes/index.routes.js";
 import Server from "./src/server/config.js";
 
-const server = new Server();
+const requiredEnv = ["MONGODB_URI", "JWT_SECRET"];
 
-server.app.use("/api", router);
+requiredEnv.forEach((env) => {
+  if (!process.env[env]) {
+    console.error(`Error crítico: Falta la variable de entorno ${env}`);
+    process.exit(1);
+  }
+});
+
+const server = new Server();
 
 server.listen();
