@@ -82,10 +82,16 @@ export const crearReserva = async (req, res) => {
       reserva: reservaCreada,
     });
   } catch (error) {
-    console.error("Error al crear reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al crear la reserva",
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Lo sentimos, esta cancha ya fue reservada para ese horario por otro usuario.',
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Error al procesar la reserva',
+      error: error.message,
     });
   }
 };

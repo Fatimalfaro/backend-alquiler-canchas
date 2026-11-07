@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema, model } from "mongoose";
 
 const reservaSchema = new Schema(
   {
@@ -10,7 +10,7 @@ const reservaSchema = new Schema(
 
     cancha: {
       type: Schema.Types.ObjectId,
-      ref: "cancha",
+      ref: "Cancha",
       required: true,
     },
 
@@ -40,12 +40,23 @@ const reservaSchema = new Schema(
       enum: ["pendiente", "confirmada", "cancelada"],
       default: "pendiente",
     },
+    preferenceId: {
+      type: String, // ¡Importante para el Punto 2 (trazabilidad de pago)!
+    },
+    paymentId: {
+      type: String,
+    },
   },
   {
     timestamps: true,
   },
 );
 
-const Reserva = mongoose.model("reserva", reservaSchema);
-
-export default Reserva;
+reservaSchema.index(
+  { cancha: 1, fecha: 1, horaInicio: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { estado: { $ne: "cancelada" } },
+  },
+);
+export default model('Reserva', reservaSchema);
