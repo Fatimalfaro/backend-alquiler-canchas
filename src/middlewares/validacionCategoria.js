@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param ,query} from "express-validator";
 
 import { resultadoValidacion } from "./resultadoValidacion.js";
 
@@ -32,5 +32,16 @@ export const validacionPatchCategoria = [
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ ]+$/)
     .withMessage("El nombre solo puede contener letras y espacios"),
 
+  resultadoValidacion,
+];
+export const validacionPaginacion = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("La página debe ser un número entero mayor o igual a 1"),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("El límite debe ser un entero entre 1 y 100"),
   resultadoValidacion,
 ];

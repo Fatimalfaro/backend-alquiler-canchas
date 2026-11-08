@@ -10,6 +10,7 @@ import {
   validacionProducto,
   validacionIDProducto,
   validacionPatchProducto,
+  validacionPaginacion,
 } from "../middlewares/validacionProducto.js";
 import errorMulter from "../middlewares/errorMulter.js";
 import { verificarToken } from "../middlewares/authMiddleware.js";
@@ -28,7 +29,7 @@ router
     validacionProducto,
     agregarProducto,
   )
-  .get(listarProductos);
+  .get(validacionPaginacion,listarProductos);
 router
   .route("/:id")
   .get(validacionIDProducto, buscarProductoPorID)

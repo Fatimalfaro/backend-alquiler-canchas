@@ -13,31 +13,35 @@ import {
   validacionReserva,
   validacionIDReserva,
   validacionPatchReserva,
+  validacionDisponibilidad,
+  validacionPaginacion,
 } from "../middlewares/validacionReserva.js";
 
 import { verificarToken } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
-router.get("/", verificarToken, listarReservas);
 
-router.post("/", verificarToken, validacionReserva, crearReserva);
+router.use(verificarToken);
+
+router.get("/", validacionPaginacion,listarReservas);
+router.post("/", validacionReserva, crearReserva);
+
 router.get(
   "/disponibilidad/:cancha/:fecha",
-  verificarToken,
-  obtenerDisponibilidad,
+  validacionDisponibilidad, 
+  obtenerDisponibilidad
 );
 
-router.get("/:id", verificarToken, validacionIDReserva, buscarReservaPorID);
+router.get("/:id", validacionIDReserva, buscarReservaPorID);
 
 router.patch(
   "/:id",
-  verificarToken,
   validacionIDReserva,
   validacionPatchReserva,
-  editarReservaPorID,
+  editarReservaPorID
 );
 
-router.delete("/:id", verificarToken, validacionIDReserva, borrarReservaPorID);
+router.delete("/:id", validacionIDReserva, borrarReservaPorID);
 
 export default router;

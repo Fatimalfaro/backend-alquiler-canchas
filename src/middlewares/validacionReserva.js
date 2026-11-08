@@ -1,6 +1,6 @@
-import { body, param } from "express-validator";
+import { body, param ,query} from "express-validator";
 
-import { resultadoValidacion } from "./resultadoValidacion.js";
+import { resultadoValidacion} from "./resultadoValidacion.js";
 
 export const validacionReserva = [
   body("cancha")
@@ -48,5 +48,23 @@ export const validacionPatchReserva = [
     .isIn(["pendiente", "confirmada", "cancelada"])
     .withMessage("El estado debe ser pendiente, confirmada o cancelada"),
 
+  resultadoValidacion,
+];
+export const validacionDisponibilidad = [
+  param("cancha").isMongoId().withMessage("El ID de la cancha no es válido"),
+  param("fecha")
+    .isISO8601()
+    .withMessage("La fecha debe tener un formato válido (YYYY-MM-DD)"),
+  resultadoValidacion,
+];
+export const validacionPaginacion = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("La página debe ser un número entero mayor o igual a 1"),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("El límite debe ser un entero entre 1 y 100"),
   resultadoValidacion,
 ];

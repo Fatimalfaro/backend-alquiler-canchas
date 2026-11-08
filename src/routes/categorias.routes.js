@@ -12,6 +12,7 @@ import {
   validacionCategoria,
   validacionIDCategoria,
   validacionPatchCategoria,
+  validacionPaginacion,
 } from "../middlewares/validacionCategoria.js";
 
 import { verificarToken } from "../middlewares/authMiddleware.js";
@@ -21,7 +22,7 @@ const router = Router();
 
 router
   .route("/")
-  .get(listarCategorias)
+  .get(validacionPaginacion,listarCategorias)
   .post(
     verificarToken,
     verificarRol("admin"),
@@ -31,7 +32,7 @@ router
 
 router
   .route("/:id")
-  .get(verificarToken, validacionIDCategoria, buscarCategoriaPorID)
+  .get(validacionIDCategoria, buscarCategoriaPorID)
   .delete(
     verificarToken,
     verificarRol("admin"),
