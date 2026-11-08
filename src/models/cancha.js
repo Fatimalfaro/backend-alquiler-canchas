@@ -51,6 +51,6 @@ const canchaSchema = new Schema(
   },
 );
 
-const Cancha = mongoose.model("cancha", canchaSchema);
+const Cancha = mongoose.model("Cancha", canchaSchema);
 
 export default Cancha;

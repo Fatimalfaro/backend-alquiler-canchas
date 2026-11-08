@@ -12,6 +12,7 @@ import {
   validacionCancha,
   validacionIDCancha,
   validacionPatchCancha,
+  validacionPaginacion,
 } from "../middlewares/validacionCancha.js";
 
 import { verificarToken } from "../middlewares/authMiddleware.js";
@@ -22,7 +23,7 @@ const router = Router();
 
 router
   .route("/")
-  .get(listarCanchas)
+  .get(validacionPaginacion,listarCanchas)
 
   .post(
     verificarToken,
@@ -34,7 +35,7 @@ router
 router
   .route("/:id")
 
-  .get(verificarToken, validacionIDCancha, buscarCanchaPorID)
+  .get(validacionIDCancha, buscarCanchaPorID)
 
   .delete(
     verificarToken,

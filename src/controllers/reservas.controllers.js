@@ -172,6 +172,7 @@ export const buscarReservaPorID = async (req, res) => {
 export const editarReservaPorID = async (req, res) => {
   try {
     const { id } = req.params;
+    const userRole = req.usuario.rol;
 
     const reserva = await Reserva.findById(id);
 
@@ -181,8 +182,9 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
+    // Verificar si es admin o si la reserva pertenece al usuario
     if (
-      req.usuario.rol !== "admin" &&
+      userRole !== "admin" &&
       reserva.usuario.toString() !== req.usuario.id.toString()
     ) {
       return res.status(403).json({
@@ -190,7 +192,27 @@ export const editarReservaPorID = async (req, res) => {
       });
     }
 
-    if (req.usuario.rol === "admin" && req.body.estado) {
+    // 1. Explicitar campos permitidos según el rol
+    const camposPermitidosAdmin = ["estado", "cancha", "fecha", "horaInicio"];
+    const camposPermitidosUsuario = ["cancha", "fecha", "horaInicio"];
+    const camposPermitidos = userRole === "admin" ? camposPermitidosAdmin : camposPermitidosUsuario;
+
+    // 2. Rechazar campos no permitidos o si un usuario intenta enviar 'estado'
+    const camposEnviados = Object.keys(req.body);
+    const camposInvalidos = camposEnviados.filter(campo => !camposPermitidos.includes(campo));
+
+    if (camposInvalidos.length > 0) {
+      return res.status(400).json({
+        success: false,
+        mensaje: userRole !== "admin" && camposInvalidos.includes("estado")
+          ? "Los usuarios no administradores no pueden modificar el estado de la reserva"
+          : `Campos no permitidos para tu rol: ${camposInvalidos.join(", ")}`,
+        camposPermitidosParaTuRol: camposPermitidos,
+      });
+    }
+
+    // Si es admin y actualiza el estado
+    if (userRole === "admin" && req.body.estado) {
       const estadosPermitidos = ["pendiente", "confirmada", "cancelada"];
 
       if (!estadosPermitidos.includes(req.body.estado)) {
@@ -201,20 +223,22 @@ export const editarReservaPorID = async (req, res) => {
 
       reserva.estado = req.body.estado;
 
-      await reserva.save();
+      // Si solo mandó estado, guardamos y retornamos directamente
+      if (!req.body.cancha && !req.body.fecha && !req.body.horaInicio) {
+        await reserva.save();
 
-      const reservaActualizada = await Reserva.findById(id)
-        .populate("usuario", "nombre apellido email")
-        .populate("cancha", "nombre tipo precio");
+        const reservaActualizada = await Reserva.findById(id)
+          .populate("usuario", "nombre apellido email")
+          .populate("cancha", "nombre tipo precio");
 
-      return res.status(200).json({
-        mensaje: "El estado de la reserva se actualizó correctamente",
-        reserva: reservaActualizada,
-      });
+        return res.status(200).json({
+          mensaje: "El estado de la reserva se actualizó correctamente",
+          reserva: reservaActualizada,
+        });
+      }
     }
 
     const canchaId = req.body.cancha || reserva.cancha;
-
     const nuevaHoraInicio = req.body.horaInicio || reserva.horaInicio;
 
     const canchaEncontrada = await Cancha.findById(canchaId);
@@ -261,10 +285,7 @@ export const editarReservaPorID = async (req, res) => {
     } else {
       const horaFinNumero = hora + 1;
 
-      nuevaHoraFin = `${String(horaFinNumero).padStart(
-        2,
-        "0",
-      )}:${String(minutos).padStart(2, "0")}`;
+      nuevaHoraFin = `${String(horaFinNumero).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
     }
 
     const reservaExistente = await Reserva.findOne({
