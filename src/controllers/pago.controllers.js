@@ -94,15 +94,13 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
     const { reservaId } = req.body;
     const usuarioId = req.usuario.id;
 
-    // Validación defensiva para evitar errores de URLs indefinidas
-    if (!process.env.FRONTEND_URL || !process.env.BACKEND_URL) {
-      console.error(
-        "❌ Faltan variables de entorno FRONTEND_URL o BACKEND_URL",
-      );
-      return res.status(500).json({
-        mensaje: "Error de configuración en el servidor (URLs faltantes)",
-      });
-    }
+    // Validación defensiva estricta
+    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+    const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3003";
+
+    console.log("--- CONFIGURACIÓN DE URLS PARA MP ---");
+    console.log("FRONTEND_URL:", FRONTEND_URL);
+    console.log("SUCCESS URL:", `${FRONTEND_URL}/checkout/resultado-cancha?status=success`);
 
     const reserva = await Reserva.findById(reservaId).populate(
       "cancha",
@@ -129,6 +127,7 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
 
     const preference = new Preference(client);
 
+    // Única llamada correcta utilizando la estructura estándar del SDK v3.x
     const result = await preference.create({
       body: {
         items: [
@@ -144,11 +143,11 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
           },
         ],
         external_reference: reserva._id.toString(),
-        notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
+        notification_url: `${BACKEND_URL}/api/pago/webhook`,
         back_urls: {
-          success: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=success`,
-          failure: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
-          pending: `${process.env.FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
+          success: `${FRONTEND_URL}/checkout/resultado-cancha?status=success`,
+          failure: `${FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
+          pending: `${FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
         },
         auto_return: "approved",
       },
@@ -165,7 +164,7 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
       preferenceId: result.id,
     });
   } catch (error) {
-    console.error("Error al crear preferencia de reserva:", error);
+    console.error("Error detallado al crear preferencia de reserva:", error);
 
     return res.status(500).json({
       mensaje: "Ocurrió un error al crear la preferencia de pago",
