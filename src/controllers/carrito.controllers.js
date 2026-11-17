@@ -7,7 +7,7 @@ import {
 } from "../services/carrito.service.js";
 
 // AGREGAR AL CARRITO
-export const agregarAlCarrito = async (req, res) => {
+export const agregarAlCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
 
@@ -23,15 +23,12 @@ export const agregarAlCarrito = async (req, res) => {
       .status(200)
       .json({ mensaje: "Producto agregado al carrito exitosamente", carrito });
   } catch (error) {
-    console.log("Error", error);
-    res.status(500).json({
-      mensaje: "Ocurrio un error al intentar agregar un producto al carrito",
-    });
-  }
-};
+    return next(error);
+    }
+  };
 
 // OBTENER CARRITO
-export const obtenerCarrito = async (req, res) => {
+export const obtenerCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
 
@@ -39,15 +36,13 @@ export const obtenerCarrito = async (req, res) => {
 
     res.status(200).json(carrito);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ mensaje: "Ocurrio un error al intentar obtener el carrito" });
+    return next(error);
   }
 };
 
+
 // VACIAR CARRITO
-export const vaciarCarrito = async (req, res) => {
+export const vaciarCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
 
@@ -55,15 +50,12 @@ export const vaciarCarrito = async (req, res) => {
 
     res.status(200).json({ mensaje: "Carrito vaciado exitosamente" });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ mensaje: "Ocurrio un error al intentar vaciar el carrito" });
+    return next(error);
   }
 };
 
 // RESTAR CANTIDAD DE PRODUCTO
-export const restarCantidadProducto = async (req, res) => {
+export const restarCantidadProducto = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
     const { productoId } = req.params;
@@ -80,16 +72,12 @@ export const restarCantidadProducto = async (req, res) => {
       .status(200)
       .json({ mensaje: "Cantidad actualizada correctamente", carrito });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      mensaje:
-        "Ocurrio un error al intentar restar la cantidad de un producto del carrito",
-    });
+    return next(error);
   }
 };
 
 // ELIMINAR PRODUCTO DEL CARRITO
-export const eliminarProductoCarrito = async (req, res) => {
+export const eliminarProductoCarrito = async (req, res, next) => {
   try {
     const { productoId } = req.params;
     const usuarioId = req.usuario.id;
@@ -100,9 +88,6 @@ export const eliminarProductoCarrito = async (req, res) => {
       .status(200)
       .json({ mensaje: "Producto eliminado del carrito exitosamente" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      mensaje: "Ocurrio un error al intentar eliminar un producto del carrito",
-    });
+    return next(error);
   }
 };
