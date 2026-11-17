@@ -6,85 +6,88 @@ import {
   editarProductoPorIDService,
 } from "../services/producto.service.js";
 
+// Función auxiliar para enviar los errores al middleware global
+const enviarError = (next, statusCode, mensaje) => {
+  const error = new Error(mensaje);
+  error.statusCode = statusCode;
+  error.payload = { message: mensaje };
+  return next(error);
+};
+
 // AGREGAR PRODUCTO
-export const agregarProducto = async (req, res) => {
+export const agregarProducto = async (req, res, next) => {
   try {
     const producto = await agregarProductoService(req.body, req.file);
 
     if (!producto) {
-      return res.status(409).json({
-        message: "No se puede agregar un producto con el mismo nombre.",
-      });
+      return enviarError(
+        next,
+        409,
+        "No se puede agregar un producto con el mismo nombre.",
+      );
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Producto agregado exitosamente",
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar agregar un producto",
-    });
+    return next(error);
   }
 };
 
 // LISTAR PRODUCTOS
-export const listarProductos = async (req, res) => {
+export const listarProductos = async (req, res, next) => {
   try {
     const resultado = await listarProductosService(req.query);
 
-    res.status(200).json(resultado);
+    return res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar listar los productos" });
+    return next(error);
   }
 };
 
 // BUSCAR PRODUCTO POR ID
-export const buscarProductoPorID = async (req, res) => {
+export const buscarProductoPorID = async (req, res, next) => {
   try {
     const productoBuscado = await buscarProductoPorIDService(req.params.id);
 
     if (!productoBuscado) {
-      return res
-        .status(404)
-        .json({ message: "No se encontro un producto con el ID enviado" });
+      return enviarError(
+        next,
+        404,
+        "No se encontro un producto con el ID enviado",
+      );
     }
 
-    res.status(200).json(productoBuscado);
+    return res.status(200).json(productoBuscado);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Ocurrio un error al intentar buscar un producto por id",
-    });
+    return next(error);
   }
 };
 
 // BORRAR PRODUCTO POR ID
-export const borrarProductoPorID = async (req, res) => {
+export const borrarProductoPorID = async (req, res, next) => {
   try {
     const productoBorrado = await borrarProductoPorIDService(req.params.id);
 
     if (!productoBorrado) {
-      return res
-        .status(404)
-        .json({ message: "No se encontro un producto con el ID enviado" });
+      return enviarError(
+        next,
+        404,
+        "No se encontro un producto con el ID enviado",
+      );
     }
 
-    res.status(200).json({ message: "El producto se elimino correctamente" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Ocurrio un error al intentar borrar un producto por id",
+    return res.status(200).json({
+      message: "El producto se elimino correctamente",
     });
+  } catch (error) {
+    return next(error);
   }
 };
 
 // EDITAR PRODUCTO POR ID
-export const editarProductoPorID = async (req, res) => {
+export const editarProductoPorID = async (req, res, next) => {
   try {
     const productoEditado = await editarProductoPorIDService(
       req.params.id,
@@ -93,19 +96,18 @@ export const editarProductoPorID = async (req, res) => {
     );
 
     if (!productoEditado) {
-      return res
-        .status(404)
-        .json({ message: "No se encontro un producto con el ID enviado" });
+      return enviarError(
+        next,
+        404,
+        "No se encontro un producto con el ID enviado",
+      );
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "El producto se actualizo correctamente",
       producto: productoEditado,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Ocurrio un error al intentar editar un producto por id",
-    });
+    return next(error);
   }
 };
