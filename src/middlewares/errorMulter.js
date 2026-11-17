@@ -4,7 +4,13 @@ const errorMulter = (err, _req, res, next) => {
       .status(400)
       .json({ mensaje: "La imagen no puede superar los 2MB" });
   }
-  next(err);
+   if (err.code === "INVALID_FILE_TYPE") {
+    return res.status(400).json({
+      mensaje: "Formato de imagen no válido. Solo se permiten JPG, PNG o WEBP.",
+    });
+  }
+
+  return next(err);
 };
 
 export default errorMulter;

@@ -1,5 +1,5 @@
 const errorHandler = (err, req, res, next) => {
-  console.error("Error:", err);
+  console.error("Error:", err.message);
 
   if (res.headersSent) {
     return next(err);
@@ -7,6 +7,12 @@ const errorHandler = (err, req, res, next) => {
 
   let status = err.status || err.statusCode || 500;
   let mensaje = "Error interno del servidor";
+
+  // Error al interpretar JSON enviado por el cliente.
+if (err.type === "entity.parse.failed") {
+  status = 400;
+  mensaje = "Los datos enviados tienen un formato incorrecto.";
+}
 
   // Error de validación de Mongoose.
   if (err.name === "ValidationError") {
@@ -24,12 +30,6 @@ const errorHandler = (err, req, res, next) => {
   else if (err.code === 11000 && !err.status && !err.statusCode) {
     status = 409;
     mensaje = "Ya existe un registro con esos datos";
-  }
-
-  // Error de tamaño de archivo.
-  else if (err.code === "LIMIT_FILE_SIZE") {
-    status = 400;
-    mensaje = "La imagen no puede superar los 2MB";
   }
 
   // Errores HTTP controlados.
