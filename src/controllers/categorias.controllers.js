@@ -1,4 +1,3 @@
-
 import {
   crearCategoriaService,
   listarCategoriasService,
@@ -8,92 +7,97 @@ import {
 } from "../services/categoria.service.js";
 
 // CREAR CATEGORIA
-export const crearCategoria = async (req, res) => {
+export const crearCategoria = async (req, res, next) => {
   try {
     await crearCategoriaService(req.body);
 
-    res.status(201).json({ message: "Categoria creada exitosamente" });
+    return res.status(201).json({
+      message: "Categoria creada exitosamente",
+    });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar crear una categoria" });
+    return next(error);
   }
 };
 
 // LISTAR CATEGORIAS
-export const listarCategorias = async (req, res) => {
+export const listarCategorias = async (req, res, next) => {
   try {
     const resultado = await listarCategoriasService(req.query);
 
-    res.status(200).json(resultado);
+    return res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrió un error al intentar listar las categorías" });
+    return next(error);
   }
 };
 
 // BUSCAR CATEGORIA POR ID
-export const buscarCategoriaPorID = async (req, res) => {
+export const buscarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaBuscada = await buscarCategoriaPorIDService(
-      req.params.id,
+      req.params.id
     );
 
     if (!categoriaBuscada) {
-      return res.status(404).json({ message: "Categoria no encontrada" });
+      const error = new Error("Categoria no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoria no encontrada",
+      };
+
+      return next(error);
     }
 
-    res.status(200).json(categoriaBuscada);
+    return res.status(200).json(categoriaBuscada);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar buscar la categoria" });
+    return next(error);
   }
 };
 
 // BORRAR CATEGORIA POR ID
-export const borrarCategoriaPorID = async (req, res) => {
+export const borrarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaBorrada = await borrarCategoriaPorIDService(
-      req.params.id,
+      req.params.id
     );
 
     if (!categoriaBorrada) {
-      return res.status(404).json({ message: "Categoría no encontrada" });
+      const error = new Error("Categoría no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoría no encontrada",
+      };
+
+      return next(error);
     }
 
-    res
-      .status(200)
-      .json({ message: "Categoría eliminada exitosamente (borrado lógico)" });
+    return res.status(200).json({
+      message: "Categoría eliminada exitosamente (borrado lógico)",
+    });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrió un error al intentar eliminar la categoría" });
+    return next(error);
   }
 };
 
 // EDITAR CATEGORIA POR ID
-export const editarCategoriaPorID = async (req, res) => {
+export const editarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaEditada = await editarCategoriaPorIDService(
       req.params.id,
-      req.body,
+      req.body
     );
 
     if (!categoriaEditada) {
-      return res.status(404).json({ message: "Categoria no encontrada" });
+      const error = new Error("Categoria no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoria no encontrada",
+      };
+
+      return next(error);
     }
 
-    res.status(200).json(categoriaEditada);
+    return res.status(200).json(categoriaEditada);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar editar la categoria" });
+    return next(error);
   }
 };
