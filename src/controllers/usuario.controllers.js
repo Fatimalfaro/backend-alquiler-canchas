@@ -1,80 +1,22 @@
-import Usuario from "../models/usuario.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
-import { enviarCodigoVerificacion } from "../services/email.service.js";
 
+import {
+  registrarUsuarioService,
+  verificarEmailService,
+  reenviarCodigoVerificacionService,
+  iniciarSesionService,
+  obtenerUsuarioActualService,
+  obtenerUsuariosService,
+  obtenerUsuarioPorIdService,
+  actualizarUsuarioService,
+  eliminarUsuarioService,
+} from "../services/usuario.service.js";
+
+// REGISTRAR USUARIO
 export const registrarUsuario = async (req, res) => {
   try {
-    const { nombre, apellido, email, password } = req.body;
+    const resultado = await registrarUsuarioService(req.body);
 
-    if (!nombre || !apellido || !email || !password) {
-      return res.status(400).json({
-        mensaje: "Todos los campos son obligatorios",
-      });
-    }
-
-    const emailNormalizado = email.toLowerCase().trim();
-
-const usuarioExistente = await Usuario.findOne({
-  email: emailNormalizado,
-});
-
-if (usuarioExistente) {
-  
-  if (usuarioExistente.emailVerificado) {
-    return res.status(400).json({
-      mensaje: "El email ya está registrado y verificado.",
-    });
-  }
-
-  return res.status(200).json({
-    mensaje:
-      "Tu cuenta ya está registrada, pero falta verificar el email. Revisá tu correo o solicitá un nuevo código.",
-    requiereVerificacion: true,
-    usuario: {
-      id: usuarioExistente._id,
-      nombre: usuarioExistente.nombre,
-      apellido: usuarioExistente.apellido,
-      email: usuarioExistente.email,
-      emailVerificado: usuarioExistente.emailVerificado,
-    },
-  });
-}
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const codigoVerificacion = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
-
-    const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
-
-    const usuarioNuevo = new Usuario({
-      nombre,
-      apellido,
-      email: emailNormalizado,
-      password: passwordHash,
-      codigoVerificacion,
-      codigoVerificacionExpira,
-      ultimoCodigoEnviado: new Date(),
-    });
-
-    await usuarioNuevo.save();
-
-    await enviarCodigoVerificacion(usuarioNuevo.email, codigoVerificacion);
-
-    return res.status(201).json({
-      mensaje:
-        "Usuario registrado correctamente. Se envió un código de verificación a tu email.",
-      usuario: {
-        id: usuarioNuevo._id,
-        nombre: usuarioNuevo.nombre,
-        apellido: usuarioNuevo.apellido,
-        email: usuarioNuevo.email,
-        rol: usuarioNuevo.rol,
-        emailVerificado: usuarioNuevo.emailVerificado,
-      },
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al registrar usuario:", error);
 
@@ -84,64 +26,12 @@ if (usuarioExistente) {
   }
 };
 
+// VERIFICAR EMAIL
 export const verificarEmail = async (req, res) => {
   try {
-    const { email, codigo } = req.body;
+    const resultado = await verificarEmailService(req.body);
 
-    if (!email || !codigo) {
-      return res.status(400).json({
-        mensaje: "Email y código son obligatorios",
-      });
-    }
-
-    const emailNormalizado = email.toLowerCase().trim();
-
-    const usuario = await Usuario.findOne({
-      email: emailNormalizado,
-    });
-
-    if (!usuario) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    if (usuario.emailVerificado) {
-      return res.status(400).json({
-        mensaje: "El email ya está verificado",
-      });
-    }
-
-    if (!usuario.codigoVerificacion) {
-      return res.status(400).json({
-        mensaje: "No hay un código de verificación activo",
-      });
-    }
-
-    if (
-      !usuario.codigoVerificacionExpira ||
-      usuario.codigoVerificacionExpira < new Date()
-    ) {
-      return res.status(400).json({
-        mensaje: "El código de verificación ha expirado",
-      });
-    }
-
-    if (usuario.codigoVerificacion !== codigo) {
-      return res.status(400).json({
-        mensaje: "El código de verificación es incorrecto",
-      });
-    }
-
-    usuario.emailVerificado = true;
-    usuario.codigoVerificacion = null;
-    usuario.codigoVerificacionExpira = null;
-
-    await usuario.save();
-
-    return res.status(200).json({
-      mensaje: "Email verificado correctamente",
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al verificar email:", error);
 
@@ -151,64 +41,14 @@ export const verificarEmail = async (req, res) => {
   }
 };
 
+// REENVIAR CODIGO DE VERIFICACION
 export const reenviarCodigoVerificacion = async (req, res) => {
   try {
-    const { email } = req.body;
+    const resultado = await reenviarCodigoVerificacionService(
+      req.body,
+    );
 
-    if (!email) {
-      return res.status(400).json({
-        mensaje: "El email es obligatorio",
-      });
-    }
-
-    const emailNormalizado = email.toLowerCase().trim();
-
-    const usuario = await Usuario.findOne({
-      email: emailNormalizado,
-    });
-
-    if (!usuario) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    if (usuario.emailVerificado) {
-      return res.status(400).json({
-        mensaje: "El email ya está verificado",
-      });
-    }
-
-    if (usuario.ultimoCodigoEnviado) {
-      const segundosTranscurridos =
-        (Date.now() - usuario.ultimoCodigoEnviado.getTime()) / 1000;
-
-      if (segundosTranscurridos < 60) {
-        const segundosRestantes = Math.ceil(60 - segundosTranscurridos);
-
-        return res.status(429).json({
-          mensaje: `Debes esperar ${segundosRestantes} segundos para solicitar otro código`,
-        });
-      }
-    }
-
-    const codigoVerificacion = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
-
-    const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
-
-    usuario.codigoVerificacion = codigoVerificacion;
-    usuario.codigoVerificacionExpira = codigoVerificacionExpira;
-    usuario.ultimoCodigoEnviado = new Date();
-
-    await usuario.save();
-
-    await enviarCodigoVerificacion(usuario.email, codigoVerificacion);
-
-    return res.status(200).json({
-      mensaje: "Se envió un nuevo código de verificación",
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al reenviar código:", error);
 
@@ -218,76 +58,22 @@ export const reenviarCodigoVerificacion = async (req, res) => {
   }
 };
 
+// INICIAR SESION
 export const iniciarSesion = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const resultado = await iniciarSesionService(req.body);
 
-    if (!email || !password) {
-      return res.status(400).json({
-        mensaje: "Email y contraseña son obligatorios",
+    if (resultado.token) {
+      res.cookie("token", resultado.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite:
+          process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 60 * 60 * 1000, // 1 hora
       });
     }
 
-    const emailNormalizado = email.toLowerCase().trim();
-
-    const usuario = await Usuario.findOne({
-      email: emailNormalizado,
-    });
-
-    if (!usuario) {
-      return res.status(401).json({
-        mensaje: "Email o contraseña incorrectos",
-      });
-    }
-
-    if (!usuario.activo) {
-      return res.status(403).json({
-        mensaje: "El usuario está desactivado",
-      });
-    }
-
-    const passwordCorrecta = await bcrypt.compare(password, usuario.password);
-
-    if (!passwordCorrecta) {
-      return res.status(401).json({
-        mensaje: "Email o contraseña incorrectos",
-      });
-    }
-
-    if (!usuario.emailVerificado) {
-      return res.status(403).json({
-        mensaje: "Debes verificar tu email antes de iniciar sesión",
-      });
-    }
-
-    const token = jwt.sign(
-      {
-        id: usuario._id,
-        rol: usuario.rol,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      },
-    );
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 60 * 60 * 1000, // 1 hora
-    });
-    return res.status(200).json({
-      mensaje: "Inicio de sesión exitoso",
-      usuario: {
-        id: usuario._id,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        email: usuario.email,
-        rol: usuario.rol,
-        emailVerificado: usuario.emailVerificado,
-      },
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al iniciar sesión:", error);
 
@@ -297,19 +83,14 @@ export const iniciarSesion = async (req, res) => {
   }
 };
 
+// OBTENER USUARIO ACTUAL
 export const obtenerUsuarioActual = async (req, res) => {
   try {
-    const usuario = await Usuario.findById(req.usuario.id).select("-password");
+    const resultado = await obtenerUsuarioActualService(
+      req.usuario.id,
+    );
 
-    if (!usuario) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    return res.status(200).json({
-      usuario,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al obtener usuario actual:", error);
 
@@ -319,28 +100,12 @@ export const obtenerUsuarioActual = async (req, res) => {
   }
 };
 
+// OBTENER TODOS LOS USUARIOS
 export const obtenerUsuarios = async (req, res) => {
   try {
-    const numeroPagina = parseInt(req.query.pagina) || 1;
-    const cantUsuarios = parseInt(req.query.limite) || 6;
-    const salto = (numeroPagina - 1) * cantUsuarios;
+    const resultado = await obtenerUsuariosService(req.query);
 
-    const query = {
-      _id: { $ne: process.env.ADMIN_PRINCIPAL_ID },
-    };
-
-    const [usuarios, cantidadUsuarios] = await Promise.all([
-      Usuario.find(query).select("-password").skip(salto).limit(cantUsuarios),
-
-      Usuario.countDocuments(query),
-    ]);
-
-    return res.status(200).json({
-      usuarios,
-      cantidadUsuarios,
-      pagina: numeroPagina,
-      limite: cantUsuarios,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
 
@@ -349,31 +114,18 @@ export const obtenerUsuarios = async (req, res) => {
     });
   }
 };
+
+// OBTENER USUARIO POR ID
 export const obtenerUsuarioPorId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        mensaje: "El ID del usuario no es válido",
-      });
-    }
+    const resultado = await obtenerUsuarioPorIdService(
+      id,
+      req.usuario,
+    );
 
-    if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
-      return res.status(403).json({
-        mensaje: "No tenés permisos para consultar este usuario",
-      });
-    }
-
-    const usuario = await Usuario.findById(id).select("-password");
-
-    if (!usuario) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    return res.status(200).json(usuario);
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al obtener usuario:", error);
 
@@ -383,135 +135,18 @@ export const obtenerUsuarioPorId = async (req, res) => {
   }
 };
 
+// ACTUALIZAR USUARIO
 export const actualizarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, apellido, email, password, rol, activo } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        mensaje: "El ID del usuario no es válido",
-      });
-    }
-
-    if (req.usuario.rol !== "admin" && req.usuario.id !== id) {
-      return res.status(403).json({
-        mensaje: "No tenés permisos para modificar este usuario",
-      });
-    }
-
-    const usuarioActual = await Usuario.findById(id);
-
-    if (!usuarioActual) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    if (
-      usuarioActual._id.toString() === process.env.ADMIN_PRINCIPAL_ID &&
-      req.usuario.id.toString() !== process.env.ADMIN_PRINCIPAL_ID
-    ) {
-      return res.status(403).json({
-        mensaje: "No se puede modificar el administrador principal",
-      });
-    }
-
-    const datosActualizar = {};
-
-    let emailCambio = false;
-    let codigoParaEnviar = null;
-
-    if (nombre !== undefined) {
-      datosActualizar.nombre = nombre;
-    }
-
-    if (apellido !== undefined) {
-      datosActualizar.apellido = apellido;
-    }
-
-    if (email !== undefined) {
-      const emailNormalizado = email.toLowerCase().trim();
-
-      if (emailNormalizado !== usuarioActual.email) {
-        const emailExistente = await Usuario.findOne({
-          email: emailNormalizado,
-          _id: { $ne: id },
-        });
-
-        if (emailExistente) {
-          return res.status(400).json({
-            mensaje: "El email ya está registrado por otro usuario",
-          });
-        }
-
-        codigoParaEnviar = Math.floor(
-          100000 + Math.random() * 900000,
-        ).toString();
-
-        const codigoVerificacionExpira = new Date(Date.now() + 10 * 60 * 1000);
-
-        datosActualizar.email = emailNormalizado;
-        datosActualizar.emailVerificado = false;
-        datosActualizar.codigoVerificacion = codigoParaEnviar;
-        datosActualizar.codigoVerificacionExpira = codigoVerificacionExpira;
-        datosActualizar.ultimoCodigoEnviado = new Date();
-
-        emailCambio = true;
-      }
-    }
-
-    if (password !== undefined) {
-      datosActualizar.password = await bcrypt.hash(password, 10);
-    }
-
-    if (req.usuario.rol === "admin" && rol !== undefined) {
-      datosActualizar.rol = rol;
-    }
-
-    if (req.usuario.rol === "admin" && activo !== undefined) {
-      datosActualizar.activo = activo;
-    }
-
-    if (Object.keys(datosActualizar).length === 0) {
-      return res.status(400).json({
-        mensaje: "No hay datos válidos para actualizar",
-      });
-    }
-
-    const usuarioActualizado = await Usuario.findByIdAndUpdate(
+    const resultado = await actualizarUsuarioService(
       id,
-      datosActualizar,
-      {
-        new: true,
-        runValidators: true,
-      },
-    ).select("-password");
+      req.body,
+      req.usuario,
+    );
 
-    if (!usuarioActualizado) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    if (emailCambio) {
-      await enviarCodigoVerificacion(
-        usuarioActualizado.email,
-        codigoParaEnviar,
-      );
-
-      return res.status(200).json({
-        mensaje:
-          "Usuario actualizado correctamente. Se envió un nuevo código de verificación al email.",
-        usuario: usuarioActualizado,
-        requiereVerificacion: true,
-      });
-    }
-
-    return res.status(200).json({
-      mensaje: "Usuario actualizado correctamente",
-      usuario: usuarioActualizado,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
 
@@ -521,35 +156,14 @@ export const actualizarUsuario = async (req, res) => {
   }
 };
 
+// ELIMINAR USUARIO
 export const eliminarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        mensaje: "El ID del usuario no es válido",
-      });
-    }
+    const resultado = await eliminarUsuarioService(id);
 
-    const usuario = await Usuario.findById(id);
-
-    if (!usuario) {
-      return res.status(404).json({
-        mensaje: "Usuario no encontrado",
-      });
-    }
-
-    if (usuario._id.toString() === process.env.ADMIN_PRINCIPAL_ID) {
-      return res.status(403).json({
-        mensaje: "No se puede eliminar el administrador principal",
-      });
-    }
-
-    await Usuario.findByIdAndDelete(id);
-
-    return res.status(200).json({
-      mensaje: "Usuario eliminado correctamente",
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
 
@@ -558,6 +172,8 @@ export const eliminarUsuario = async (req, res) => {
     });
   }
 };
+
+// CERRAR SESION
 export const cerrarSesion = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
