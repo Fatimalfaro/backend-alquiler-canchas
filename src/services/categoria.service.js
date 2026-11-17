@@ -64,3 +64,8 @@ export const editarCategoriaPorIDService = async (id, datos) => {
 
   return categoriaEditada;
 };
+
+// LISTAR TODAS LAS CATEGORÍAS ACTIVAS
+export const listarTodasLasCategoriasService = async () => {
+  return await Categoria.find({ activo: true });
+};

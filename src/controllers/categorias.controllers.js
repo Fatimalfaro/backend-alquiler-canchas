@@ -4,6 +4,7 @@ import {
   buscarCategoriaPorIDService,
   borrarCategoriaPorIDService,
   editarCategoriaPorIDService,
+  listarTodasLasCategoriasService,
 } from "../services/categoria.service.js";
 
 // CREAR CATEGORIA
@@ -97,6 +98,17 @@ export const editarCategoriaPorID = async (req, res, next) => {
     }
 
     return res.status(200).json(categoriaEditada);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
+// LISTAR TODAS LAS CATEGORÍAS
+export const listarTodasLasCategorias = async (req, res, next) => {
+  try {
+    const categorias = await listarTodasLasCategoriasService();
+    return res.status(200).json({ categorias });
   } catch (error) {
     return next(error);
   }

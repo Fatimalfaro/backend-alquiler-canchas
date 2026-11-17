@@ -6,6 +6,7 @@ import {
   buscarCategoriaPorID,
   borrarCategoriaPorID,
   editarCategoriaPorID,
+  listarTodasLasCategorias,
 } from "../controllers/categorias.controllers.js";
 
 import {
@@ -29,6 +30,8 @@ router
     validacionCategoria,
     crearCategoria,
   );
+
+  router.get("/todas", listarTodasLasCategorias);
 
 router
   .route("/:id")
