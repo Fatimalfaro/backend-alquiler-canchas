@@ -6,7 +6,7 @@ import {
 } from "../services/pago.service.js";
 
 // CREAR PREFERENCIA DE PAGO
-export const crearPreferenciaPago = async (req, res) => {
+export const crearPreferenciaPago = async (req, res, next) => {
   try {
     const userId = req.usuario.id;
 
@@ -14,16 +14,12 @@ export const crearPreferenciaPago = async (req, res) => {
 
     res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      mensaje: "Ocurrió un error al crear la preferencia de pago",
-    });
+    return next(error);
   }
 };
 
 // CREAR PREFERENCIA DE PAGO PARA RESERVA
-export const crearPreferenciaPagoReserva = async (req, res) => {
+export const crearPreferenciaPagoReserva = async (req, res, next) => {
   try {
     const { reservaId } = req.body;
     const usuarioId = req.usuario.id;
@@ -35,17 +31,12 @@ export const crearPreferenciaPagoReserva = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error detallado al crear preferencia de reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al crear la preferencia de pago",
-      detalles: error.message,
-    });
+    return next(error);
   }
 };
 
 // RECIBIR WEBHOOK
-export const recibirWebhook = async (req, res) => {
+export const recibirWebhook = async (req, res, next) => {
   try {
     const resultado = await recibirWebhookService(req.query, req.body);
 
@@ -55,13 +46,12 @@ export const recibirWebhook = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("❌ Error crítico en Webhook:", error.message);
-    return res.status(500).json({ error: error.message });
+    return next(error);
   }
 };
 
 // OBTENER MIS COMPRAS
-export const obtenerMisCompras = async (req, res) => {
+export const obtenerMisCompras = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
 
@@ -71,10 +61,6 @@ export const obtenerMisCompras = async (req, res) => {
       ordenes,
     });
   } catch (error) {
-    console.error("Error al obtener mis compras:", error);
-
-    res.status(500).json({
-      mensaje: "Ocurrió un error al obtener tus compras",
-    });
+    return next(error);
   }
 };
