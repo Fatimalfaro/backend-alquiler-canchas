@@ -6,6 +6,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import "../database/db.js"; // Se ejecuta y valida la conexión (y frena si falla)
 import rutas from "../routes/index.routes.js";
+import errorHandler from "../middlewares/errorHandler.js";
 
 export default class Server {
   constructor() {
@@ -35,6 +36,16 @@ export default class Server {
   routes() {
     // Único punto de montaje para /api, evitando duplicados
     this.app.use("/api", rutas);
+
+    // Rutas inexistentes
+    this.app.use((req, res, next) => {
+      const error = new Error("Ruta no encontrada");
+      error.statusCode = 404;
+      next(error);
+    });
+
+    // Manejador global de errores (siempre después de las rutas)
+    this.app.use(errorHandler);
   }
 
   listen() {
