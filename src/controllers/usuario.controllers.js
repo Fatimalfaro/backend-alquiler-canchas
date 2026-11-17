@@ -11,55 +11,57 @@ import {
   eliminarUsuarioService,
 } from "../services/usuario.service.js";
 
+// Derivar errores controlados al manejador global
+const responderResultado = (resultado, res, next) => {
+  if (resultado.status >= 400) {
+    const error = new Error(
+      resultado.respuesta?.mensaje || "Error en la solicitud"
+    );
+
+    error.statusCode = resultado.status;
+    error.payload = resultado.respuesta;
+
+    return next(error);
+  }
+
+  return res.status(resultado.status).json(resultado.respuesta);
+};
+
 // REGISTRAR USUARIO
-export const registrarUsuario = async (req, res) => {
+export const registrarUsuario = async (req, res, next) => {
   try {
     const resultado = await registrarUsuarioService(req.body);
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al registrar usuario:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al registrar usuario",
-    });
+    return next(error);
   }
 };
 
 // VERIFICAR EMAIL
-export const verificarEmail = async (req, res) => {
+export const verificarEmail = async (req, res, next) => {
   try {
     const resultado = await verificarEmailService(req.body);
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al verificar email:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al verificar el email",
-    });
+    return next(error);
   }
 };
 
 // REENVIAR CODIGO DE VERIFICACION
-export const reenviarCodigoVerificacion = async (req, res) => {
+export const reenviarCodigoVerificacion = async (req, res, next) => {
   try {
-    const resultado = await reenviarCodigoVerificacionService(
-      req.body,
-    );
+    const resultado = await reenviarCodigoVerificacionService(req.body);
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al reenviar código:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al reenviar el código de verificación",
-    });
+    return next(error);
   }
 };
 
 // INICIAR SESION
-export const iniciarSesion = async (req, res) => {
+export const iniciarSesion = async (req, res, next) => {
   try {
     const resultado = await iniciarSesionService(req.body);
 
@@ -69,107 +71,83 @@ export const iniciarSesion = async (req, res) => {
         secure: process.env.NODE_ENV === "production",
         sameSite:
           process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 60 * 60 * 1000, // 1 hora
+        maxAge: 60 * 60 * 1000,
       });
     }
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al iniciar sesión:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al iniciar sesión",
-    });
+    return next(error);
   }
 };
 
 // OBTENER USUARIO ACTUAL
-export const obtenerUsuarioActual = async (req, res) => {
+export const obtenerUsuarioActual = async (req, res, next) => {
   try {
     const resultado = await obtenerUsuarioActualService(
-      req.usuario.id,
+      req.usuario.id
     );
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al obtener usuario actual:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al obtener el usuario",
-    });
+    return next(error);
   }
 };
 
 // OBTENER TODOS LOS USUARIOS
-export const obtenerUsuarios = async (req, res) => {
+export const obtenerUsuarios = async (req, res, next) => {
   try {
     const resultado = await obtenerUsuariosService(req.query);
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al obtener usuarios:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al obtener los usuarios",
-    });
+    return next(error);
   }
 };
 
 // OBTENER USUARIO POR ID
-export const obtenerUsuarioPorId = async (req, res) => {
+export const obtenerUsuarioPorId = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const resultado = await obtenerUsuarioPorIdService(
       id,
-      req.usuario,
+      req.usuario
     );
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al obtener usuario:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al obtener el usuario",
-    });
+    return next(error);
   }
 };
 
 // ACTUALIZAR USUARIO
-export const actualizarUsuario = async (req, res) => {
+export const actualizarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const resultado = await actualizarUsuarioService(
       id,
       req.body,
-      req.usuario,
+      req.usuario
     );
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al actualizar usuario:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al actualizar el usuario",
-    });
+    return next(error);
   }
 };
 
 // ELIMINAR USUARIO
-export const eliminarUsuario = async (req, res) => {
+export const eliminarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const resultado = await eliminarUsuarioService(id);
 
-    return res.status(resultado.status).json(resultado.respuesta);
+    return responderResultado(resultado, res, next);
   } catch (error) {
-    console.error("Error al eliminar usuario:", error);
-
-    return res.status(500).json({
-      mensaje: "Error al eliminar el usuario",
-    });
+    return next(error);
   }
 };
 
