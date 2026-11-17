@@ -1,59 +1,41 @@
-import Producto from "../models/producto.js";
-import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
+import {
+  agregarAlCarritoService,
+  obtenerCarritoService,
+  vaciarCarritoService,
+  restarCantidadProductoService,
+  eliminarProductoCarritoService,
+} from "../services/carrito.service.js";
 
+// AGREGAR AL CARRITO
 export const agregarAlCarrito = async (req, res) => {
   try {
-    const { producto, cantidad } = req.body;
     const usuarioId = req.usuario.id;
 
-    const productoExistente = await Producto.findById(producto);
-    if (!productoExistente) {
+    const carrito = await agregarAlCarritoService(req.body, usuarioId);
+
+    if (!carrito) {
       return res
         .status(404)
         .json({ mensaje: "No se encontro un producto con el ID enviado" });
     }
 
-    const carrito = await buscarOcrearCarrito(usuarioId);
-
-    const itemIndex = carrito.items.findIndex(
-      (item) => item.producto.toString() === producto,
-    );
-
-    if (itemIndex > -1) {
-      carrito.items[itemIndex].cantidad += cantidad;
-    } else {
-      carrito.items.push({
-        producto,
-        cantidad,
-      });
-    }
-    await carrito.save();
-    await carrito.populate(
-      "items.producto",
-      "nombreProducto precio imagen descripcion",
-    );
     res
       .status(200)
       .json({ mensaje: "Producto agregado al carrito exitosamente", carrito });
   } catch (error) {
     console.log("Error", error);
-    res
-      .status(500)
-      .json({
-        mensaje: "Ocurrio un error al intentar agregar un producto al carrito",
-      });
+    res.status(500).json({
+      mensaje: "Ocurrio un error al intentar agregar un producto al carrito",
+    });
   }
 };
 
+// OBTENER CARRITO
 export const obtenerCarrito = async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
-    const carrito = await buscarOcrearCarrito(usuarioId);
 
-    await carrito.populate(
-      "items.producto",
-      "nombreProducto precio imagen descripcion",
-    );
+    const carrito = await obtenerCarritoService(usuarioId);
 
     res.status(200).json(carrito);
   } catch (error) {
@@ -64,12 +46,13 @@ export const obtenerCarrito = async (req, res) => {
   }
 };
 
+// VACIAR CARRITO
 export const vaciarCarrito = async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
-    const carrito = await buscarOcrearCarrito(usuarioId);
-    carrito.items = [];
-    await carrito.save();
+
+    await vaciarCarritoService(usuarioId);
+
     res.status(200).json({ mensaje: "Carrito vaciado exitosamente" });
   } catch (error) {
     console.error(error);
@@ -79,72 +62,47 @@ export const vaciarCarrito = async (req, res) => {
   }
 };
 
+// RESTAR CANTIDAD DE PRODUCTO
 export const restarCantidadProducto = async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const { productoId } = req.params;
 
-    const carrito = await buscarOcrearCarrito(usuarioId);
-    const itemIndex = carrito.items.findIndex(
-      (item) => item.producto.toString() === productoId,
-    );
+    const carrito = await restarCantidadProductoService(usuarioId, productoId);
 
-    if (itemIndex === -1) {
+    if (!carrito) {
       return res
         .status(404)
         .json({ mensaje: "Producto no encontrado en el carrito" });
     }
 
-    carrito.items[itemIndex].cantidad -= 1;
-
-    if (carrito.items[itemIndex].cantidad <= 0) {
-      carrito.items.splice(itemIndex, 1);
-    }
-
-    await carrito.save();
-    await carrito.populate(
-      "items.producto",
-      "nombreProducto precio imagen descripcion",
-    );
     res
       .status(200)
       .json({ mensaje: "Cantidad actualizada correctamente", carrito });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        mensaje:
-          "Ocurrio un error al intentar restar la cantidad de un producto del carrito",
-      });
+    res.status(500).json({
+      mensaje:
+        "Ocurrio un error al intentar restar la cantidad de un producto del carrito",
+    });
   }
 };
 
+// ELIMINAR PRODUCTO DEL CARRITO
 export const eliminarProductoCarrito = async (req, res) => {
   try {
     const { productoId } = req.params;
     const usuarioId = req.usuario.id;
 
-    const carrito = await buscarOcrearCarrito(usuarioId);
-    carrito.items = carrito.items.filter(
-      (item) => item.producto.toString() !== productoId,
-    );
+    await eliminarProductoCarritoService(usuarioId, productoId);
 
-    await carrito.save();
-    await carrito.populate(
-      "items.producto",
-      "nombreProducto precio imagen descripcion",
-    );
     res
       .status(200)
       .json({ mensaje: "Producto eliminado del carrito exitosamente" });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        mensaje:
-          "Ocurrio un error al intentar eliminar un producto del carrito",
-      });
+    res.status(500).json({
+      mensaje: "Ocurrio un error al intentar eliminar un producto del carrito",
+    });
   }
 };
