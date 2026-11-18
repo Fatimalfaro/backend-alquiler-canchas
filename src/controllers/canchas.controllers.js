@@ -1,7 +1,12 @@
-import Cancha from "../models/cancha.js";
-import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
+import {
+  agregarCanchaService,
+  listarCanchasService,
+  buscarCanchaPorIDService,
+  borrarCanchaPorIDService,
+  editarCanchaPorIDService,
+} from "../services/cancha.service.js";
 
-export const agregarCancha = async (req, res) => {
+export const agregarCancha = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -9,71 +14,30 @@ export const agregarCancha = async (req, res) => {
       });
     }
 
-    const datosCancha = {
-      ...req.body,
-    };
-
-    const resultado = await subirImagenACloudinary(req.file.buffer);
-
-    datosCancha.imagen = resultado.secure_url;
-
-    const cancha = new Cancha(datosCancha);
-
-    await cancha.save();
+    const cancha = await agregarCanchaService(req.body, req.file);
 
     res.status(201).json({
       message: "Cancha agregada exitosamente",
       cancha,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar agregar una cancha",
-    });
+    return next(error);
   }
 };
 
-export const listarCanchas = async (req, res) => {
+export const listarCanchas = async (req, res, next) => {
   try {
-    const { termino } = req.query;
+    const resultado = await listarCanchasService(req.query);
 
-    const numeroPagina = parseInt(req.query.pagina) || 1;
-    const cantCanchas = parseInt(req.query.limite) || 6;
-    const salto = (numeroPagina - 1) * cantCanchas;
-
-    const query = { activo: true };
-
-    if (termino) {
-      query.nombre = {
-        $regex: termino,
-        $options: "i",
-      };
-    }
-
-    const [canchas, cantidadCanchas] = await Promise.all([
-      Cancha.find(query).skip(salto).limit(cantCanchas),
-      Cancha.countDocuments(query),
-    ]);
-
-    res.status(200).json({
-      canchas,
-      cantidadCanchas,
-      pagina: numeroPagina,
-      limite: cantCanchas,
-    });
+    res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar listar las canchas",
-    });
+    return next(error);
   }
 };
-
-export const buscarCanchaPorID = async (req, res) => {
+  
+export const buscarCanchaPorID = async (req, res, next) => {
   try {
-    const canchaBuscada = await Cancha.findById(req.params.id);
+    const canchaBuscada = await buscarCanchaPorIDService(req.params.id);
 
     if (!canchaBuscada) {
       return res.status(404).json({
@@ -83,25 +47,13 @@ export const buscarCanchaPorID = async (req, res) => {
 
     res.status(200).json(canchaBuscada);
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar buscar una cancha por ID",
-    });
+    return next(error);
   }
 };
 
-export const borrarCanchaPorID = async (req, res) => {
+export const borrarCanchaPorID = async (req, res, next) => {
   try {
-    // REEMPLAZADO: En lugar de eliminar, cambiamos 'activo' y 'disponible' a false
-    const canchaBorrada = await Cancha.findByIdAndUpdate(
-      req.params.id,
-      {
-        activo: false,
-        disponible: false,
-      },
-      { new: true },
-    );
+    const canchaBorrada = await borrarCanchaPorIDService(req.params.id);
 
     if (!canchaBorrada) {
       return res.status(404).json({
@@ -113,17 +65,17 @@ export const borrarCanchaPorID = async (req, res) => {
       message: "La cancha se eliminó correctamente de forma lógica",
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar borrar una cancha por ID",
-    });
+    return next(error);
   }
 };
 
-export const editarCanchaPorID = async (req, res) => {
+export const editarCanchaPorID = async (req, res, next) => {
   try {
-    const cancha = await Cancha.findById(req.params.id);
+    const cancha = await editarCanchaPorIDService(
+      req.params.id,
+      req.body,
+      req.file,
+    );
 
     if (!cancha) {
       return res.status(404).json({
@@ -131,29 +83,11 @@ export const editarCanchaPorID = async (req, res) => {
       });
     }
 
-    cancha.nombre = req.body.nombre;
-    cancha.descripcion = req.body.descripcion;
-    cancha.precio = req.body.precio;
-    cancha.tipo = req.body.tipo;
-    cancha.disponible = req.body.disponible;
-
-    if (req.file) {
-      const resultado = await subirImagenACloudinary(req.file.buffer);
-
-      cancha.imagen = resultado.secure_url;
-    }
-
-    await cancha.save();
-
     res.status(200).json({
       message: "La cancha se actualizó correctamente",
       cancha,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar editar una cancha por ID",
-    });
+    return next(error);
   }
 };

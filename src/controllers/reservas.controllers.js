@@ -1,426 +1,94 @@
-import Reserva from "../models/reserva.js";
-import Cancha from "../models/cancha.js";
+import {
+  crearReservaService,
+  listarReservasService,
+  buscarReservaPorIDService,
+  editarReservaPorIDService,
+  borrarReservaPorIDService,
+  obtenerDisponibilidadService,
+} from "../services/reserva.service.js";
 
-export const crearReserva = async (req, res) => {
+export const crearReserva = async (req, res, next) => {
   try {
     const { cancha, fecha, horaInicio } = req.body;
-
     const usuario = req.usuario.id;
 
-    const canchaEncontrada = await Cancha.findById(cancha);
-
-    if (!canchaEncontrada) {
-      return res.status(404).json({
-        mensaje: "No se encontró la cancha indicada",
-      });
-    }
-
-    if (!canchaEncontrada.disponible) {
-      return res.status(400).json({
-        mensaje: "La cancha no está disponible",
-      });
-    }
-
-    // Calcular automáticamente la hora de finalización
-    const [hora, minutos] = horaInicio.split(":").map(Number);
-    let horaFin;
-
-    if (hora === 23) {
-      horaFin = "00:00";
-    } else {
-      const horaFinNumero = hora + 1;
-
-      horaFin = `${String(horaFinNumero).padStart(2, "0")}:${String(
-        minutos,
-      ).padStart(2, "0")}`;
-    }
-    const [anio, mes, dia] = fecha.split("-").map(Number);
-
-    const fechaReserva = new Date(anio, mes - 1, dia);
-    fechaReserva.setHours(0, 0, 0, 0);
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (fechaReserva < hoy) {
-      return res.status(400).json({
-        mensaje: "No se puede reservar una fecha pasada",
-      });
-    }
-
-    const reservaExistente = await Reserva.findOne({
-      cancha,
-      fecha: fechaReserva,
-      estado: { $ne: "cancelada" },
-      horaInicio,
-    });
-
-    if (reservaExistente) {
-      return res.status(409).json({
-        mensaje: "La cancha ya está reservada en ese turno",
-      });
-    }
-
-    const nuevaReserva = new Reserva({
+    const resultado = await crearReservaService(
+      { cancha, fecha, horaInicio },
       usuario,
-      cancha,
-      fecha: fechaReserva,
-      horaInicio,
-      horaFin,
-      precio: canchaEncontrada.precio,
-      estado: "pendiente",
-    });
+    );
 
-    await nuevaReserva.save();
-
-    const reservaCreada = await Reserva.findById(nuevaReserva._id)
-      .populate("usuario", "nombre apellido email")
-      .populate("cancha", "nombre tipo precio");
-
-    return res.status(201).json({
-      mensaje: "Reserva creada correctamente",
-      reserva: reservaCreada,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Lo sentimos, esta cancha ya fue reservada para ese horario por otro usuario.',
+        message:
+          "Lo sentimos, esta cancha ya fue reservada para ese horario por otro usuario.",
       });
     }
-    res.status(500).json({
-      success: false,
-      message: 'Error al procesar la reserva',
-      error: error.message,
-    });
+
+   return next(error);
   }
 };
 
-export const listarReservas = async (req, res) => {
+export const listarReservas = async (req, res, next) => {
   try {
-    const numeroPagina = parseInt(req.query.pagina) || 1;
-    const cantReservas = parseInt(req.query.limite) || 6;
-    const salto = (numeroPagina - 1) * cantReservas;
+    const resultado = await listarReservasService(req.query, req.usuario);
 
-    const query = {};
-
-    if (req.usuario.rol !== "admin") {
-      query.usuario = req.usuario.id;
-    }
-
-    const [reservas, cantidadReservas] = await Promise.all([
-      Reserva.find(query)
-        .populate("usuario", "nombre apellido email")
-        .populate("cancha", "nombre tipo precio")
-        .sort({ fecha: 1, horaInicio: 1 })
-        .skip(salto)
-        .limit(cantReservas),
-
-      Reserva.countDocuments(query),
-    ]);
-
-    res.status(200).json({
-      reservas,
-      cantidadReservas,
-      pagina: numeroPagina,
-      limite: cantReservas,
-    });
+    res.status(200).json(resultado);
   } catch (error) {
-    console.error("Error al listar reservas:", error);
-
-    res.status(500).json({
-      mensaje: "Ocurrió un error al listar las reservas",
-    });
+    return next(error);
   }
 };
 
-export const buscarReservaPorID = async (req, res) => {
+export const buscarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const reserva = await Reserva.findById(id)
-      .populate("usuario", "nombre apellido email")
-      .populate("cancha", "nombre tipo precio");
+    const resultado = await buscarReservaPorIDService(id, req.usuario);
 
-    if (!reserva) {
-      return res.status(404).json({
-        mensaje: "No se encontró la reserva",
-      });
-    }
-
-    if (
-      req.usuario.rol !== "admin" &&
-      reserva.usuario._id.toString() !== req.usuario.id.toString()
-    ) {
-      return res.status(403).json({
-        mensaje: "No tenés permisos para consultar esta reserva",
-      });
-    }
-
-    return res.status(200).json({
-      reserva,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al buscar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al buscar la reserva",
-    });
+    return next(error);
   }
 };
 
-export const editarReservaPorID = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userRole = req.usuario.rol;
-
-    const reserva = await Reserva.findById(id);
-
-    if (!reserva) {
-      return res.status(404).json({
-        mensaje: "No se encontró la reserva",
-      });
-    }
-
-    // Verificar si es admin o si la reserva pertenece al usuario
-    if (
-      userRole !== "admin" &&
-      reserva.usuario.toString() !== req.usuario.id.toString()
-    ) {
-      return res.status(403).json({
-        mensaje: "No tenés permisos para editar esta reserva",
-      });
-    }
-
-    // 1. Explicitar campos permitidos según el rol
-    const camposPermitidosAdmin = ["estado", "cancha", "fecha", "horaInicio"];
-    const camposPermitidosUsuario = ["cancha", "fecha", "horaInicio"];
-    const camposPermitidos = userRole === "admin" ? camposPermitidosAdmin : camposPermitidosUsuario;
-
-    // 2. Rechazar campos no permitidos o si un usuario intenta enviar 'estado'
-    const camposEnviados = Object.keys(req.body);
-    const camposInvalidos = camposEnviados.filter(campo => !camposPermitidos.includes(campo));
-
-    if (camposInvalidos.length > 0) {
-      return res.status(400).json({
-        success: false,
-        mensaje: userRole !== "admin" && camposInvalidos.includes("estado")
-          ? "Los usuarios no administradores no pueden modificar el estado de la reserva"
-          : `Campos no permitidos para tu rol: ${camposInvalidos.join(", ")}`,
-        camposPermitidosParaTuRol: camposPermitidos,
-      });
-    }
-
-    // Si es admin y actualiza el estado
-    if (userRole === "admin" && req.body.estado) {
-      const estadosPermitidos = ["pendiente", "confirmada", "cancelada"];
-
-      if (!estadosPermitidos.includes(req.body.estado)) {
-        return res.status(400).json({
-          mensaje: "El estado indicado no es válido",
-        });
-      }
-
-      reserva.estado = req.body.estado;
-
-      // Si solo mandó estado, guardamos y retornamos directamente
-      if (!req.body.cancha && !req.body.fecha && !req.body.horaInicio) {
-        await reserva.save();
-
-        const reservaActualizada = await Reserva.findById(id)
-          .populate("usuario", "nombre apellido email")
-          .populate("cancha", "nombre tipo precio");
-
-        return res.status(200).json({
-          mensaje: "El estado de la reserva se actualizó correctamente",
-          reserva: reservaActualizada,
-        });
-      }
-    }
-
-    const canchaId = req.body.cancha || reserva.cancha;
-    const nuevaHoraInicio = req.body.horaInicio || reserva.horaInicio;
-
-    const canchaEncontrada = await Cancha.findById(canchaId);
-
-    if (!canchaEncontrada) {
-      return res.status(404).json({
-        mensaje: "No se encontró la cancha indicada",
-      });
-    }
-
-    if (!canchaEncontrada.disponible) {
-      return res.status(400).json({
-        mensaje: "La cancha no está disponible",
-      });
-    }
-
-    let fechaReserva;
-
-    if (req.body.fecha) {
-      const [anio, mes, dia] = req.body.fecha.split("-").map(Number);
-
-      fechaReserva = new Date(anio, mes - 1, dia);
-      fechaReserva.setHours(0, 0, 0, 0);
-    } else {
-      fechaReserva = new Date(reserva.fecha);
-      fechaReserva.setHours(0, 0, 0, 0);
-    }
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (fechaReserva < hoy) {
-      return res.status(400).json({
-        mensaje: "No se puede reservar una fecha pasada",
-      });
-    }
-
-    const [hora, minutos] = nuevaHoraInicio.split(":").map(Number);
-
-    let nuevaHoraFin;
-
-    if (hora === 23) {
-      nuevaHoraFin = "00:00";
-    } else {
-      const horaFinNumero = hora + 1;
-
-      nuevaHoraFin = `${String(horaFinNumero).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
-    }
-
-    const reservaExistente = await Reserva.findOne({
-      _id: { $ne: id },
-      cancha: canchaId,
-      fecha: fechaReserva,
-      estado: { $ne: "cancelada" },
-      horaInicio: nuevaHoraInicio,
-    });
-
-    if (reservaExistente) {
-      return res.status(409).json({
-        mensaje: "La cancha ya está reservada en ese turno",
-      });
-    }
-
-    reserva.cancha = canchaId;
-    reserva.fecha = fechaReserva;
-    reserva.horaInicio = nuevaHoraInicio;
-    reserva.horaFin = nuevaHoraFin;
-    reserva.precio = canchaEncontrada.precio;
-
-    await reserva.save();
-
-    const reservaActualizada = await Reserva.findById(id)
-      .populate("usuario", "nombre apellido email")
-      .populate("cancha", "nombre tipo precio");
-
-    return res.status(200).json({
-      mensaje: "La reserva se actualizó correctamente",
-      reserva: reservaActualizada,
-    });
-  } catch (error) {
-    console.error("Error al editar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al editar la reserva",
-    });
-  }
-};
-
-export const borrarReservaPorID = async (req, res) => {
+export const editarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const reserva = await Reserva.findById(id);
+    const resultado = await editarReservaPorIDService(
+      id,
+      req.body,
+      req.usuario,
+    );
 
-    if (!reserva) {
-      return res.status(404).json({
-        mensaje: "No se encontró la reserva",
-      });
-    }
-
-    if (
-      req.usuario.rol !== "admin" &&
-      reserva.usuario.toString() !== req.usuario.id.toString()
-    ) {
-      return res.status(403).json({
-        mensaje: "No tenés permisos para cancelar esta reserva",
-      });
-    }
-
-    reserva.estado = "cancelada";
-
-    await reserva.save();
-
-    return res.status(200).json({
-      mensaje: "La reserva se canceló correctamente",
-      reserva,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al cancelar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al cancelar la reserva",
-    });
+    return next(error);
   }
 };
-export const obtenerDisponibilidad = async (req, res) => {
+
+export const borrarReservaPorID = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const resultado = await borrarReservaPorIDService(id, req.usuario);
+
+    return res.status(resultado.status).json(resultado.respuesta);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const obtenerDisponibilidad = async (req, res, next) => {
   try {
     const { cancha, fecha } = req.params;
 
-    const canchaEncontrada = await Cancha.findById(cancha);
+    const resultado = await obtenerDisponibilidadService(cancha, fecha);
 
-    if (!canchaEncontrada) {
-      return res.status(404).json({
-        mensaje: "No se encontró la cancha indicada",
-      });
-    }
-
-    const [anio, mes, dia] = fecha.split("-").map(Number);
-
-    const fechaConsulta = new Date(anio, mes - 1, dia);
-    fechaConsulta.setHours(0, 0, 0, 0);
-
-    const reservas = await Reserva.find({
-      cancha,
-      fecha: fechaConsulta,
-      estado: { $ne: "cancelada" },
-    }).select("horaInicio horaFin");
-
-    const turnos = [];
-
-    for (let hora = 8; hora <= 23; hora++) {
-      const horaInicio = `${String(hora).padStart(2, "0")}:00`;
-
-      let horaFin;
-
-      if (hora === 23) {
-        horaFin = "00:00";
-      } else {
-        horaFin = `${String(hora + 1).padStart(2, "0")}:00`;
-      }
-
-      const reservado = reservas.some(
-        (reserva) => reserva.horaInicio === horaInicio,
-      );
-
-      turnos.push({
-        horaInicio,
-        horaFin,
-        disponible: !reservado,
-      });
-    }
-
-    return res.status(200).json({
-      cancha: canchaEncontrada.nombre,
-      fecha,
-      turnos,
-    });
+    return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al obtener disponibilidad:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al obtener la disponibilidad",
-    });
+    return next(error);
   }
 };

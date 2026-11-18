@@ -1,104 +1,108 @@
-import Categoria from "../models/categoria.js";
+import {
+  crearCategoriaService,
+  listarCategoriasService,
+  buscarCategoriaPorIDService,
+  borrarCategoriaPorIDService,
+  editarCategoriaPorIDService,
+  listarTodasLasCategoriasService,
+} from "../services/categoria.service.js";
 
-export const crearCategoria = async (req, res) => {
+export const crearCategoria = async (req, res, next) => {
   try {
-    const nuevaCategoria = new Categoria(req.body);
-    await nuevaCategoria.save();
-    res.status(201).json({ message: "Categoria creada exitosamente" });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar crear una categoria" });
-  }
-};
-export const listarCategorias = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
+    await crearCategoriaService(req.body);
 
-    const limit = parseInt(req.query.limit) || 6;
-
-    const skip = (page - 1) * limit;
-
-    const [categorias, totalCategorias] = await Promise.all([
-      Categoria.find({ activo: true }).skip(skip).limit(limit),
-      Categoria.countDocuments({ activo: true }),
-    ]);
-
-    const totalPages = Math.ceil(totalCategorias / limit);
-
-    res.status(200).json({
-      categorias,
-      paginacion: {
-        totalItems: totalCategorias,
-        totalPages,
-        currentPage: page,
-        pageSize: limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+    return res.status(201).json({
+      message: "Categoria creada exitosamente",
     });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrió un error al intentar listar las categorías" });
+    return next(error);
   }
 };
 
-export const buscarCategoriaPorID = async (req, res) => {
+export const listarCategorias = async (req, res, next) => {
   try {
-    const categoriaBuscada = await Categoria.findById(req.params.id);
-    if (!categoriaBuscada) {
-      return res.status(404).json({ message: "Categoria no encontrada" });
-    }
-    res.status(200).json(categoriaBuscada);
+    const resultado = await listarCategoriasService(req.query);
+
+    return res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar buscar la categoria" });
+    return next(error);
   }
 };
 
-export const borrarCategoriaPorID = async (req, res) => {
+export const buscarCategoriaPorID = async (req, res, next) => {
   try {
-    const categoriaBorrada = await Categoria.findByIdAndUpdate(
-      req.params.id,
-      { activo: false },
-      { new: true },
+    const categoriaBuscada = await buscarCategoriaPorIDService(
+      req.params.id
+    );
+
+    if (!categoriaBuscada) {
+      const error = new Error("Categoria no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoria no encontrada",
+      };
+
+      return next(error);
+    }
+
+    return res.status(200).json(categoriaBuscada);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const borrarCategoriaPorID = async (req, res, next) => {
+  try {
+    const categoriaBorrada = await borrarCategoriaPorIDService(
+      req.params.id
     );
 
     if (!categoriaBorrada) {
-      return res.status(404).json({ message: "Categoría no encontrada" });
+      const error = new Error("Categoría no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoría no encontrada",
+      };
+
+      return next(error);
     }
 
-    res
-      .status(200)
-      .json({ message: "Categoría eliminada exitosamente (borrado lógico)" });
+    return res.status(200).json({
+      message: "Categoría eliminada exitosamente (borrado lógico)",
+    });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrió un error al intentar eliminar la categoría" });
+    return next(error);
   }
 };
 
-export const editarCategoriaPorID = async (req, res) => {
+export const editarCategoriaPorID = async (req, res, next) => {
   try {
-    const categoriaEditada = await Categoria.findByIdAndUpdate(
+    const categoriaEditada = await editarCategoriaPorIDService(
       req.params.id,
-      req.body,
-      { new: true },
+      req.body
     );
+
     if (!categoriaEditada) {
-      return res.status(404).json({ message: "Categoria no encontrada" });
+      const error = new Error("Categoria no encontrada");
+      error.statusCode = 404;
+      error.payload = {
+        message: "Categoria no encontrada",
+      };
+
+      return next(error);
     }
-    res.status(200).json(categoriaEditada);
+
+    return res.status(200).json(categoriaEditada);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Ocurrio un error al intentar editar la categoria" });
+    return next(error);
+  }
+};
+
+export const listarTodasLasCategorias = async (req, res, next) => {
+  try {
+    const categorias = await listarTodasLasCategoriasService();
+    return res.status(200).json({ categorias });
+  } catch (error) {
+    return next(error);
   }
 };

@@ -1,0 +1,302 @@
+import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
+import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
+import Orden from "../models/orden.js";
+import Reserva from "../models/reserva.js";
+
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN,
+});
+
+export const crearPreferenciaPagoService = async (userId) => {
+  const carrito = await buscarOcrearCarrito(userId);
+  await carrito.populate("items.producto");
+
+  if (carrito.items.length === 0) {
+    return {
+      status: 400,
+      respuesta: { mensaje: "El carrito esta vacio" },
+    };
+  }
+
+  let montoTotal = 0;
+
+  const itemsMP = carrito.items.map((item) => {
+    const subTotal = item.producto.precio * item.cantidad;
+    montoTotal += subTotal;
+
+    return {
+      id: item.producto._id.toString(),
+      title: item.producto.nombreProducto,
+      unit_price: Number(item.producto.precio),
+      quantity: Number(item.cantidad),
+      currency_id: "ARS",
+      picture_url: item.producto.imagen,
+    };
+  });
+
+  const itemsOrden = carrito.items.map((item) => ({
+    producto: item.producto._id,
+    nombreProducto: item.producto.nombreProducto,
+    precioUnitario: item.producto.precio,
+    cantidad: item.cantidad,
+  }));
+
+  const nuevaOrden = new Orden({
+    usuario: userId,
+    items: itemsOrden,
+    montoTotal,
+    estado: "pendiente",
+  });
+
+  await nuevaOrden.save();
+
+  const preference = new Preference(client);
+
+  const result = await preference.create({
+    body: {
+      items: itemsMP,
+      external_reference: nuevaOrden._id.toString(),
+      notification_url: `${process.env.BACKEND_URL}/api/pago/webhook`,
+      back_urls: {
+        success: `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
+        failure: `${process.env.FRONTEND_URL}/checkout/resultado?status=failure`,
+        pending: `${process.env.FRONTEND_URL}/checkout/resultado?status=pending`,
+      },
+      auto_return: "approved",
+    },
+  });
+
+  nuevaOrden.preferenceId = result.id;
+  await nuevaOrden.save();
+
+  return {
+    status: 201,
+    respuesta: {
+      mensaje: "La preferencia de pago fue creada con exito",
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point,
+      ordenId: nuevaOrden._id,
+    },
+  };
+};
+
+export const crearPreferenciaPagoReservaService = async (
+  reservaId,
+  usuarioId,
+) => {
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+  const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3003";
+
+  const reserva = await Reserva.findById(reservaId).populate(
+    "cancha",
+    "nombre precio",
+  );
+
+  if (!reserva) {
+    return {
+      status: 404,
+      respuesta: {
+        mensaje: "No se encontró la reserva",
+      },
+    };
+  }
+
+  if (reserva.usuario.toString() !== usuarioId) {
+    return {
+      status: 403,
+      respuesta: {
+        mensaje: "No tenés permiso para pagar esta reserva",
+      },
+    };
+  }
+
+  if (reserva.estado !== "pendiente") {
+    return {
+      status: 400,
+      respuesta: {
+        mensaje: "La reserva no está pendiente de pago",
+      },
+    };
+  }
+
+  const preference = new Preference(client);
+
+  const result = await preference.create({
+    body: {
+      items: [
+        {
+          id: reserva.cancha._id.toString(),
+          title: `Reserva ${reserva.cancha.nombre}`,
+          description: `Reserva del ${reserva.fecha.toLocaleDateString(
+            "es-AR",
+          )} de ${reserva.horaInicio} a ${reserva.horaFin}`,
+          unit_price: Number(reserva.precio),
+          quantity: 1,
+          currency_id: "ARS",
+        },
+      ],
+      external_reference: reserva._id.toString(),
+      notification_url: `${BACKEND_URL}/api/pago/webhook`,
+      back_urls: {
+        success: `${FRONTEND_URL}/checkout/resultado-cancha?status=success`,
+        failure: `${FRONTEND_URL}/checkout/resultado-cancha?status=failure`,
+        pending: `${FRONTEND_URL}/checkout/resultado-cancha?status=pending`,
+      },
+      auto_return: "approved",
+    },
+  });
+
+  reserva.preferenceId = result.id;
+  await reserva.save();
+
+  return {
+    status: 201,
+    respuesta: {
+      mensaje: "La preferencia de pago fue creada con éxito",
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point,
+      reservaId: reserva._id,
+      preferenceId: result.id,
+    },
+  };
+};
+
+export const recibirWebhookService = async (query, body) => {
+  console.log("🚨 Webhook de Mercado Pago recibido");
+
+  const topicOrType = query.topic || query.type || body?.type || body?.action;
+
+  let paymentId = query.id || query["data.id"] || body?.data?.id;
+
+  if (topicOrType === "merchant_order") {
+    const merchantOrderId = query.id;
+    const respuesta = await fetch(
+      `https://api.mercadopago.com/merchant_orders/${merchantOrderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        },
+      },
+    );
+
+    const merchantOrder = await respuesta.json();
+
+    const pagoAprobado = merchantOrder.payments?.find(
+      (pago) => pago.status === "approved",
+    );
+
+    if (pagoAprobado) {
+      paymentId = pagoAprobado.id;
+    }
+  }
+
+  if (!paymentId) {
+    console.log("⚠️ Webhook recibido sin paymentId");
+    return { sendStatus: 200 };
+  }
+
+  const payment = new Payment(client);
+  const pagoData = await payment.get({ id: paymentId });
+
+  if (pagoData.status !== "approved") {
+    console.log("⏳ El pago todavía no está aprobado:", pagoData.status);
+    return { sendStatus: 200 };
+  }
+
+  const externalReference = pagoData.external_reference;
+  const montoPagado = pagoData.transaction_amount;
+  const monedaPagada = pagoData.currency_id;
+
+  const reserva = await Reserva.findById(externalReference).populate(
+    "cancha",
+    "precio",
+  );
+
+  if (reserva) {
+    if (reserva.estado === "confirmada") {
+      console.log(
+        "ℹ️ La reserva ya estaba confirmada previamente (Idempotencia).",
+      );
+      return { sendStatus: 200 };
+    }
+
+    if (
+      Number(montoPagado) !== Number(reserva.precio) ||
+      monedaPagada !== "ARS"
+    ) {
+      console.error("❌ Discrepancia en montos o moneda para la reserva", {
+        esperado: reserva.precio,
+        recibido: montoPagado,
+      });
+
+      return {
+        status: 400,
+        respuesta: {
+          error: "El monto o la moneda no coinciden con la reserva",
+        },
+      };
+    }
+
+    reserva.estado = "confirmada";
+    reserva.paymentId = paymentId;
+    await reserva.save();
+
+    console.log(
+      "✅ Reserva confirmada y trazada con éxito:",
+      reserva._id.toString(),
+    );
+    return { sendStatus: 200 };
+  }
+  const orden = await Orden.findById(externalReference);
+
+  if (orden) {
+    if (orden.estado === "aprobada") {
+      console.log("ℹ️ La orden ya estaba aprobada previamente (Idempotencia).");
+      return { sendStatus: 200 };
+    }
+
+    if (
+      Number(montoPagado) !== Number(orden.montoTotal) ||
+      monedaPagada !== "ARS"
+    ) {
+      console.error("❌ Discrepancia en montos o moneda para la orden");
+
+      return {
+        status: 400,
+        respuesta: { error: "El monto o la moneda no coinciden con la orden" },
+      };
+    }
+
+    orden.estado = "aprobada";
+    orden.paymentId = paymentId;
+    await orden.save();
+
+    const carrito = await buscarOcrearCarrito(orden.usuario);
+
+    if (carrito) {
+      carrito.items = [];
+      await carrito.save();
+    }
+
+    console.log(
+      "✅ Orden aprobada y carrito vaciado con éxito:",
+      externalReference,
+    );
+    return { sendStatus: 200 };
+  }
+
+  console.log(
+    "⚠️ No se encontró Reserva ni Orden para external_reference:",
+    externalReference,
+  );
+
+  return { sendStatus: 200 };
+};
+
+export const obtenerMisComprasService = async (usuarioId) => {
+  const ordenes = await Orden.find({
+    usuario: usuarioId,
+  }).sort({ createdAt: -1 });
+
+  return ordenes;
+};
