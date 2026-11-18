@@ -59,6 +59,7 @@ export const crearPreferenciaPagoService = async (userId) => {
     `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
   );
 
+
   const result = await preference.create({
     body: {
       items: itemsMP,

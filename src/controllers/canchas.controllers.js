@@ -7,7 +7,7 @@ import {
 } from "../services/cancha.service.js";
 
 // AGREGAR CANCHA
-export const agregarCancha = async (req, res) => {
+export const agregarCancha = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -22,31 +22,24 @@ export const agregarCancha = async (req, res) => {
       cancha,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar agregar una cancha",
-    });
+    return next(error);
   }
 };
 
 // LISTAR CANCHAS
-export const listarCanchas = async (req, res) => {
+export const listarCanchas = async (req, res, next) => {
   try {
     const resultado = await listarCanchasService(req.query);
 
     res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar listar las canchas",
-    });
+    return next(error);
   }
 };
+  
 
 // BUSCAR CANCHA POR ID
-export const buscarCanchaPorID = async (req, res) => {
+export const buscarCanchaPorID = async (req, res, next) => {
   try {
     const canchaBuscada = await buscarCanchaPorIDService(req.params.id);
 
@@ -58,16 +51,12 @@ export const buscarCanchaPorID = async (req, res) => {
 
     res.status(200).json(canchaBuscada);
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar buscar una cancha por ID",
-    });
+    return next(error);
   }
 };
 
 // BORRAR CANCHA POR ID
-export const borrarCanchaPorID = async (req, res) => {
+export const borrarCanchaPorID = async (req, res, next) => {
   try {
     const canchaBorrada = await borrarCanchaPorIDService(req.params.id);
 
@@ -81,16 +70,12 @@ export const borrarCanchaPorID = async (req, res) => {
       message: "La cancha se eliminó correctamente de forma lógica",
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar borrar una cancha por ID",
-    });
+    return next(error);
   }
 };
 
 // EDITAR CANCHA POR ID
-export const editarCanchaPorID = async (req, res) => {
+export const editarCanchaPorID = async (req, res, next) => {
   try {
     const cancha = await editarCanchaPorIDService(
       req.params.id,
@@ -109,10 +94,6 @@ export const editarCanchaPorID = async (req, res) => {
       cancha,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Ocurrió un error al intentar editar una cancha por ID",
-    });
+    return next(error);
   }
 };
