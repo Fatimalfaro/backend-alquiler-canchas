@@ -1,1342 +1,153 @@
-#  Backend - Alquiler de Canchas
+# Backend - Alquiler de Canchas
 
-Backend de una aplicación web para la **reserva de canchas de fútbol**, gestión de productos, carrito de compras y pagos online mediante Mercado Pago.
+API REST para una aplicación web de reservas de canchas de fútbol y venta de productos deportivos. Permite administrar usuarios, canchas, reservas, categorías, productos, carritos y pagos mediante Mercado Pago.
 
-El proyecto fue desarrollado como trabajo grupal.
+Proyecto desarrollado como trabajo grupal.
 
-## 👥 Integrantes
+## Integrantes
 
-* **Almaraz Abel**
-* **Fátima Alfaro**
-* **Ángel Nader**
+- Almaraz Abel
+- Fátima Alfaro
+- Ángel Nader
 
----
+## Funcionalidades principales
 
-#  Funcionalidades principales
+### Usuarios y autenticación
+- Registro de usuarios y verificación de correo electrónico mediante código.
+- Reenvío del código de verificación.
+- Inicio y cierre de sesión.
+- Autenticación mediante JWT almacenado en una cookie `httpOnly`.
+- Consulta y actualización del perfil.
+- Administración de usuarios, roles y estado de las cuentas.
+- Protección del administrador principal.
 
-### 👤 Usuarios
+### Canchas
+- Alta, consulta, edición y eliminación de canchas.
+- Búsqueda por nombre y paginación.
+- Administración de disponibilidad y tipos de cancha: Fútbol 5, Fútbol 7 y Fútbol 11.
+- Carga de imágenes mediante Cloudinary.
 
-* Registro de usuarios.
-* Verificación de correo electrónico mediante código.
-* Reenvío de código de verificación.
-* Inicio y cierre de sesión.
-* Autenticación mediante JWT.
-* JWT almacenado en cookie `httpOnly`.
-* Gestión de perfiles.
-* Gestión de usuarios por parte del administrador.
-* Activación y desactivación de usuarios.
-* Gestión de roles.
-* Protección del administrador principal.
+### Reservas
+- Creación, consulta, modificación y cancelación de reservas.
+- Consulta de disponibilidad por cancha y fecha.
+- Reservas de una hora, con horarios disponibles entre las 08:00 y las 23:00.
+- Validación de fechas pasadas y prevención de reservas duplicadas.
+- Restricción de acceso a las reservas según el rol y la propiedad de cada reserva.
+- Confirmación de la reserva luego de verificar el pago.
 
-### ⚽ Canchas
+### Productos y categorías
+- Alta, consulta, edición y eliminación de productos.
+- Búsqueda por nombre y paginación.
+- Administración de categorías.
+- Carga de imágenes mediante Cloudinary.
+- Imagen predeterminada para productos cuando no se proporciona una imagen.
 
-* Crear canchas.
-* Listar canchas.
-* Buscar cancha por ID.
-* Editar canchas.
-* Eliminar canchas.
-* Paginación.
-* Búsqueda por nombre.
-* Carga de imágenes mediante Cloudinary.
-* Control de disponibilidad.
-* Tipos de cancha:
+### Carrito
+- Un carrito asociado a cada usuario.
+- Agregar productos, modificar cantidades, quitar productos y vaciar el carrito.
+- Consulta del carrito del usuario autenticado.
+- Los administradores no pueden operar como compradores desde el carrito.
 
-  * Fútbol 5
-  * Fútbol 7
-  * Fútbol 11
+### Pagos y órdenes
+- Integración con Mercado Pago.
+- Creación de preferencias de pago para compras y reservas.
+- Recepción de notificaciones mediante webhook.
+- Actualización del estado de órdenes y reservas según el resultado del pago.
+- Consulta del historial de compras.
 
-### 📅 Reservas
+## Tecnologías utilizadas
 
-* Crear reservas.
-* Listar reservas.
-* Buscar reservas por ID.
-* Editar reservas.
-* Cancelar reservas.
-* Consultar disponibilidad.
-* Control de reservas duplicadas.
-* Control de fechas pasadas.
-* Horarios desde las 08:00 hasta las 23:00.
-* Duración de una hora por reserva.
-* Confirmación de reserva mediante Mercado Pago.
+- Node.js
+- Express
+- MongoDB y Mongoose
+- JavaScript con ES Modules
+- JSON Web Token (JWT)
+- bcrypt
+- express-validator
+- Multer
+- Cloudinary
+- Mercado Pago
+- Nodemailer
+- Servicio SMTP para el envío de correos
+- dotenv
+- CORS
 
-### 🛍️ Productos
-
-* Crear productos.
-* Listar productos.
-* Buscar productos por ID.
-* Editar productos.
-* Eliminar productos.
-* Paginación.
-* Búsqueda por nombre.
-* Gestión de categorías.
-* Carga de imágenes mediante Cloudinary.
-* Imagen predeterminada cuando no se proporciona una imagen.
-
-### 🛒 Carrito
-
-* Agregar productos.
-* Aumentar cantidad.
-* Disminuir cantidad.
-* Eliminar productos.
-* Vaciar carrito.
-* Consultar carrito.
-* Un carrito por usuario.
-* Los administradores no pueden agregar productos al carrito.
-
-### 💳 Pagos
-
-* Integración con Mercado Pago.
-* Creación de preferencias de pago para productos.
-* Creación de preferencias de pago para reservas.
-* Webhook de Mercado Pago.
-* Confirmación automática de pagos aprobados.
-* Creación de órdenes.
-* Asociación de pagos con órdenes y reservas.
-* Consulta de compras realizadas.
-
----
-
-# 🛠️ Tecnologías utilizadas
-
-* **Node.js**
-* **Express.js**
-* **MongoDB**
-* **Mongoose**
-* **JavaScript / ES Modules**
-* **JWT**
-* **bcrypt**
-* **express-validator**
-* **Multer**
-* **Cloudinary**
-* **Mercado Pago**
-* **Nodemailer**
-* **Mailtrap**
-* **dotenv**
-* **CORS**
-* **ngrok**
-
----
-
-# 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```text
 backend-alquiler-canchas/
-│
 ├── src/
-│   │
 │   ├── controllers/
-│   │   ├── carrito.controllers.js
-│   │   ├── canchas.controllers.js
-│   │   ├── categorias.controllers.js
-│   │   ├── pago.controllers.js
-│   │   ├── productos.controllers.js
-│   │   ├── reservas.controllers.js
-│   │   └── usuario.controllers.js
-│   │
+│   ├── database/
 │   ├── middlewares/
-│   │   ├── authMiddleware.js
-│   │   ├── rolMiddleware.js
-│   │   ├── upload.js
-│   │   ├── errorMulter.js
-│   │   └── validaciones/
-│   │
 │   ├── models/
-│   │   ├── carrito.js
-│   │   ├── cancha.js
-│   │   ├── categoria.js
-│   │   ├── orden.js
-│   │   ├── producto.js
-│   │   ├── reserva.js
-│   │   └── usuario.js
-│   │
 │   ├── routes/
-│   │   ├── carrito.routes.js
-│   │   ├── canchas.routes.js
-│   │   ├── categorias.routes.js
-│   │   ├── index.routes.js
-│   │   ├── pago.routes.js
-│   │   ├── productos.routes.js
-│   │   ├── reservas.routes.js
-│   │   └── usuario.routes.js
-│   │
+│   ├── server/
+│   ├── services/
 │   └── utils/
-│       ├── buscarOcrearCarrito.js
-│       ├── cloudinary.js
-│       ├── subirImagenACloudinary.js
-│       └── enviarCodigoVerificacion.js
-│
 ├── .env
 ├── .gitignore
 ├── package.json
 └── README.md
 ```
 
----
+La estructura muestra las carpetas principales. Dentro de cada una se encuentran los módulos correspondientes a usuarios, canchas, reservas, productos, categorías, carrito y pagos.
 
-# 🔐 Autenticación y autorización
+## Instalación y ejecución
 
-La autenticación se realiza mediante **JWT almacenado en una cookie HTTP-only**.
+### Requisitos previos
 
-El JWT contiene:
+- Node.js.
+- pnpm (o el gestor de paquetes configurado para el proyecto).
+- Una instancia de MongoDB.
+- Cuentas y credenciales de los servicios externos que se quieran utilizar: Mercado Pago, Cloudinary y el proveedor SMTP.
 
-```json
-{
-  "id": "ID_DEL_USUARIO",
-  "rol": "usuario"
-}
-```
+### Pasos
 
-La cookie utilizada es:
+1. Clonar el repositorio:
 
-```text
-token
-```
+   ```bash
+   git clone https://github.com/Fatimalfaro/backend-alquiler-canchas.git
+   ```
 
-El token tiene una duración de:
+2. Ingresar a la carpeta del backend:
 
-```text
-1 hora
-```
+   ```bash
+   cd backend-alquiler-canchas
+   ```
 
-## Roles
+3. Instalar las dependencias:
 
-El sistema cuenta con dos roles:
+   ```bash
+   pnpm install
+   ```
 
-```text
-usuario
-admin
-```
+4. Crear un archivo `.env` en la raíz del proyecto y completar las variables de entorno.
 
-Las rutas administrativas utilizan el middleware:
+5. Consultar los scripts disponibles en `package.json`:
 
-```js
-verificarToken
-verificarRol("admin")
-```
+   ```bash
+   pnpm run
+   ```
 
-Esto permite proteger las operaciones que solamente pueden realizar los administradores.
+6. Ejecutar el script de desarrollo definido en `package.json`. Por ejemplo, si el script se llama `dev`:
 
----
+   ```bash
+   pnpm run dev
+   ```
 
-# 👤 Usuarios
+## Variables de entorno
 
-## Registrar usuario
-
-```http
-POST /api/usuario/registro
-```
-
-Ejemplo:
-
-```json
-{
-  "nombre": "José",
-  "apellido": "Pérez",
-  "email": "jose@example.com",
-  "password": "12345678"
-}
-```
-
-Al registrarse, el usuario queda inicialmente como:
-
-```json
-{
-  "rol": "usuario",
-  "activo": true,
-  "emailVerificado": false
-}
-```
-
-La contraseña se almacena utilizando `bcrypt`.
-
----
-
-## Verificar email
-
-```http
-POST /api/usuario/verificar-email
-```
-
-Ejemplo:
-
-```json
-{
-  "email": "jose@example.com",
-  "codigo": "123456"
-}
-```
-
-El código:
-
-* Tiene 6 dígitos.
-* Tiene una duración de 10 minutos.
-* Se elimina una vez utilizado correctamente.
-
----
-
-## Reenviar código
-
-```http
-POST /api/usuario/reenviar-codigo
-```
-
-El sistema permite solicitar un nuevo código cada 60 segundos.
-
-Si se solicita antes de tiempo, devuelve:
-
-```http
-429 Too Many Requests
-```
-
----
-
-## Iniciar sesión
-
-```http
-POST /api/usuario/login
-```
-
-Ejemplo:
-
-```json
-{
-  "email": "jose@example.com",
-  "password": "12345678"
-}
-```
-
-Para iniciar sesión correctamente:
-
-1. El usuario debe existir.
-2. Debe estar activo.
-3. La contraseña debe ser correcta.
-4. El email debe estar verificado.
-
----
-
-## Obtener usuario actual
-
-```http
-GET /api/usuario/me
-```
-
-🔒 Requiere autenticación.
-
-Devuelve los datos del usuario autenticado sin incluir la contraseña.
-
----
-
-## Cerrar sesión
-
-```http
-POST /api/usuario/logout
-```
-
-Elimina la cookie de autenticación.
-
----
-
-## Listar usuarios
-
-```http
-GET /api/usuario
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-El administrador principal configurado en `ADMIN_PRINCIPAL_ID` no se incluye en el listado.
-
----
-
-## Obtener usuario por ID
-
-```http
-GET /api/usuario/:id
-```
-
-🔒 Requiere autenticación.
-
-* Usuario común → solamente puede consultar su propio usuario.
-* Administrador → puede consultar cualquier usuario.
-
----
-
-## Actualizar usuario
-
-```http
-PUT /api/usuario/:id
-```
-
-🔒 Requiere autenticación.
-
-El usuario puede modificar sus propios datos.
-
-El administrador puede modificar usuarios y también:
-
-```text
-rol
-activo
-```
-
-Si se modifica el email, se genera un nuevo código de verificación.
-
----
-
-## Eliminar usuario
-
-```http
-DELETE /api/usuario/:id
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-El administrador principal no puede ser eliminado.
-
----
-
-# ⚽ Canchas
-
-## Listar canchas
-
-```http
-GET /api/canchas
-```
-
-Permite realizar búsquedas y utilizar paginación.
-
-Parámetros:
-
-```text
-termino
-pagina
-limite
-```
-
-Ejemplo:
-
-```http
-GET /api/canchas?termino=futbol&pagina=1&limite=8
-```
-
-La paginación utiliza:
-
-```text
-pagina = 1
-limite = 8
-```
-
-por defecto.
-
-Respuesta:
-
-```json
-{
-  "canchas": [],
-  "cantidadCanchas": 10,
-  "pagina": 1,
-  "limite": 8
-}
-```
-
----
-
-## Crear cancha
-
-```http
-POST /api/canchas
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-Utiliza `multipart/form-data`.
-
-Campos:
-
-```text
-nombre
-descripcion
-precio
-tipo
-disponible
-imagen
-```
-
-Tipos permitidos:
-
-```text
-Fútbol 5
-Fútbol 7
-Fútbol 11
-```
-
-La imagen se almacena en Cloudinary.
-
----
-
-## Buscar cancha por ID
-
-```http
-GET /api/canchas/:id
-```
-
-🔒 Requiere autenticación.
-
----
-
-## Editar cancha
-
-```http
-PUT /api/canchas/:id
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-También se dispone de:
-
-```http
-PATCH /api/canchas/:id
-```
-
----
-
-## Eliminar cancha
-
-```http
-DELETE /api/canchas/:id
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
----
-
-# 📅 Reservas
-
-## Crear reserva
-
-```http
-POST /api/reservas
-```
-
-🔒 Requiere autenticación.
-
-Ejemplo:
-
-```json
-{
-  "cancha": "ID_DE_LA_CANCHA",
-  "fecha": "2026-09-20",
-  "horaInicio": "18:00"
-}
-```
-
-El backend calcula automáticamente la hora de finalización:
-
-```text
-18:00 → 19:00
-```
-
-No se permite:
-
-* Reservar una cancha inexistente.
-* Reservar una cancha no disponible.
-* Reservar fechas pasadas.
-* Realizar reservas duplicadas.
-* Que un administrador realice una reserva.
-
----
-
-## Listar reservas
-
-```http
-GET /api/reservas
-```
-
-🔒 Requiere autenticación.
-
-### Usuario común
-
-Recibe solamente sus reservas.
-
-### Administrador
-
-Puede consultar todas las reservas.
-
----
-
-## Buscar reserva
-
-```http
-GET /api/reservas/:id
-```
-
-🔒 Requiere autenticación.
-
-Un usuario común solamente puede consultar sus propias reservas.
-
----
-
-## Consultar disponibilidad
-
-```http
-GET /api/reservas/disponibilidad/:cancha/:fecha
-```
-
-🔒 Requiere autenticación.
-
-Los horarios se generan desde:
-
-```text
-08:00
-09:00
-10:00
-11:00
-12:00
-...
-23:00
-```
-
-Cada turno devuelve:
-
-```json
-{
-  "horaInicio": "18:00",
-  "horaFin": "19:00",
-  "disponible": true
-}
-```
-
----
-
-## Editar reserva
-
-```http
-PATCH /api/reservas/:id
-```
-
-🔒 Requiere autenticación.
-
-Permite modificar:
-
-```text
-cancha
-fecha
-horaInicio
-```
-
-El administrador también puede modificar el estado.
-
-Estados disponibles:
-
-```text
-pendiente
-confirmada
-cancelada
-```
-
----
-
-## Cancelar reserva
-
-```http
-DELETE /api/reservas/:id
-```
-
-🔒 Requiere autenticación.
-
-La reserva no se elimina físicamente de MongoDB.
-
-Se modifica su estado:
-
-```json
-{
-  "estado": "cancelada"
-}
-```
-
----
-
-# 🛍️ Productos
-
-## Listar productos
-
-```http
-GET /api/producto
-```
-
-Permite búsqueda y paginación.
-
-Parámetros:
-
-```text
-termino
-pagina
-limite
-```
-
-Ejemplo:
-
-```http
-GET /api/producto?termino=botin&pagina=1&limite=6
-```
-
----
-
-## Crear producto
-
-```http
-POST /api/producto
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-Utiliza `multipart/form-data`.
-
-Campos:
-
-```text
-nombreProducto
-descripcion
-precio
-categoria
-imagen
-```
-
-La imagen se almacena en Cloudinary.
-
-Si no se proporciona una imagen, se utiliza una imagen predeterminada.
-
----
-
-## Buscar producto por ID
-
-```http
-GET /api/producto/:id
-```
-
-Esta ruta es pública.
-
----
-
-## Editar producto
-
-```http
-PUT /api/producto/:id
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
-También:
-
-```http
-PATCH /api/producto/:id
-```
-
----
-
-## Eliminar producto
-
-```http
-DELETE /api/producto/:id
-```
-
-🔒 Requiere:
-
-```text
-Token + rol admin
-```
-
----
-
-# 🗂️ Categorías
-
-## Crear categoría
-
-```http
-POST /api/categorias
-```
-
-Ejemplo:
-
-```json
-{
-  "nombreCategoria": "Indumentaria deportiva"
-}
-```
-
-## Listar categorías
-
-```http
-GET /api/categorias
-```
-
-## Buscar categoría
-
-```http
-GET /api/categorias/:id
-```
-
-## Editar categoría
-
-```http
-PUT /api/categorias/:id
-```
-
-También:
-
-```http
-PATCH /api/categorias/:id
-```
-
-## Eliminar categoría
-
-```http
-DELETE /api/categorias/:id
-```
-
-> Actualmente las rutas de categorías no tienen middleware de autenticación ni de rol administrador.
-
----
-
-# 🛒 Carrito
-
-Todas las operaciones del carrito requieren autenticación.
-
-## Agregar producto
-
-```http
-POST /api/carrito
-```
-
-Ejemplo:
-
-```json
-{
-  "producto": "ID_DEL_PRODUCTO",
-  "cantidad": 2
-}
-```
-
-Si el producto ya existe en el carrito, se incrementa la cantidad.
-
----
-
-## Obtener carrito
-
-```http
-GET /api/carrito
-```
-
-Devuelve el carrito correspondiente al usuario autenticado.
-
----
-
-## Vaciar carrito
-
-```http
-DELETE /api/carrito
-```
-
----
-
-## Restar cantidad
-
-```http
-PATCH /api/carrito/restar/:productoId
-```
-
-Disminuye una unidad.
-
-Cuando la cantidad llega a cero, el producto se elimina del carrito.
-
----
-
-## Eliminar producto
-
-```http
-DELETE /api/carrito/producto/:productoId
-```
-
-Elimina completamente el producto del carrito.
-
----
-
-# 💳 Mercado Pago
-
-El backend utiliza Mercado Pago para procesar los pagos de productos y reservas.
-## Tarjeta de Prueba
-```http
-Numero de tarjeta: 3711 803032 57522
-Nombre del titular: APRO
-Vencimiento: 11/30
-Codigo de seguridad: 1234
-DNI: 12345678
-Correo:ESTUSER2310962352775634707@testuser.com
-```
-## Crear preferencia para productos
-
-```http
-POST /api/pago/crear-preferencia
-```
-
-🔒 Requiere autenticación.
-
-El backend:
-
-1. Obtiene el carrito del usuario.
-2. Verifica que tenga productos.
-3. Calcula el total.
-4. Crea una orden.
-5. Crea la preferencia de Mercado Pago.
-6. Guarda el `preferenceId`.
-7. Devuelve la URL de pago.
-
-La orden comienza con:
-
-```text
-estado: pendiente
-```
-
-La moneda utilizada es:
-
-```text
-ARS
-```
-
----
-
-## Crear preferencia para una reserva
-
-```http
-POST /api/pago/crear-preferencia-reserva
-```
-
-🔒 Requiere autenticación.
-
-Ejemplo:
-
-```json
-{
-  "reservaId": "ID_DE_LA_RESERVA"
-}
-```
-
-La reserva debe:
-
-* Existir.
-* Pertenecer al usuario autenticado.
-* Encontrarse en estado `pendiente`.
-
----
-
-# 🔔 Webhook de Mercado Pago
-
-```http
-GET /api/pago/webhook
-POST /api/pago/webhook
-```
-
-Esta ruta es pública porque Mercado Pago necesita poder acceder a ella.
-
-El webhook recibe las notificaciones de Mercado Pago y consulta el estado real del pago.
-
-Cuando el pago es aprobado:
-
-### Compra de productos
-
-La orden pasa de:
-
-```text
-pendiente
-```
-
-a:
-
-```text
-aprobada
-```
-
-Además:
-
-* Se guarda el `paymentId`.
-* Se vacía el carrito del usuario.
-
-### Reserva
-
-La reserva pasa de:
-
-```text
-pendiente
-```
-
-a:
-
-```text
-confirmada
-```
-
----
-
-# 🧾 Mis compras
-
-```http
-GET /api/pago/mis-compras
-```
-
-🔒 Requiere autenticación.
-
-Devuelve las órdenes correspondientes al usuario autenticado.
-
-Las órdenes se muestran desde la más reciente hasta la más antigua.
-
----
-
-# ☁️ Cloudinary
-
-Cloudinary se utiliza para almacenar las imágenes de:
-
-* Canchas.
-* Productos.
-
-Configuración:
-
-```env
-CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
-CLOUDINARY_API_KEY=TU_API_KEY
-CLOUDINARY_API_SECRET=TU_API_SECRET
-```
-
-Las imágenes se reciben mediante Multer y posteriormente se suben a Cloudinary.
-
-Para las imágenes de las canchas se utiliza la carpeta:
-
-```text
-imagenes-cancha
-```
-
-Cloudinary devuelve una URL segura (`secure_url`) que se almacena en MongoDB.
-
----
-
-# 📧 Verificación de correo
-
-El proyecto utiliza **Nodemailer + Brevo** para realizar las pruebas de envío de correos.
-
-El flujo es:
-
-```text
-Registro
-   ↓
-Generación de código
-   ↓
-Envío de correo
-   ↓
-Usuario ingresa código
-   ↓
-Validación
-   ↓
-Email verificado
-```
-
-El código tiene:
-
-```text
-6 dígitos
-10 minutos de validez
-60 segundos entre reenvíos
-```
-
----
-
-# 📬 Brevo
-
-Brevo se utiliza como servicio SMTP durante el desarrollo para probar el envío de los correos electrónicos.
-
-Variables utilizadas:
-
-```env
-MAILTRAP_HOST=TU_HOST
-MAILTRAP_PORT=TU_PORT
-MAILTRAP_USER=TU_USUARIO
-MAILTRAP_PASS=TU_PASSWORD
-```
-
-Nodemailer utiliza estas variables para establecer la conexión SMTP.
-
----
-
-# 🌐 Ngrok
-
-Durante el desarrollo se utilizó **ngrok** para exponer temporalmente el servidor local a Internet.
-
-Esto fue especialmente necesario para realizar pruebas con el webhook de Mercado Pago.
-
-Flujo:
-
-```text
-Servidor local
-http://localhost:3003
-        ↓
-      ngrok
-        ↓
-URL pública HTTPS
-        ↓
-Mercado Pago
-        ↓
-/api/pago/webhook
-```
-
-La URL generada por ngrok puede cambiar al reiniciar el túnel dependiendo de la configuración utilizada.
-
----
-
-# 🧰 Utilidades
-
-## buscarOcrearCarrito
-
-La utilidad:
-
-```js
-buscarOcrearCarrito(usuarioId)
-```
-
-busca el carrito correspondiente al usuario.
-
-Si el usuario todavía no tiene uno, crea automáticamente un carrito vacío.
-
-Ejemplo conceptual:
-
-```js
-let carrito = await Carrito.findOne({
-  usuario: usuarioId
-});
-
-if (!carrito) {
-  carrito = await Carrito.create({
-    usuario: usuarioId,
-    items: []
-  });
-}
-```
-
----
-
-# 🗄️ Modelos de MongoDB
-
-## Usuario
-
-```js
-{
-  nombre: String,
-  apellido: String,
-  email: String,
-  password: String,
-  rol: String,
-  activo: Boolean,
-  emailVerificado: Boolean,
-  codigoVerificacion: String,
-  codigoVerificacionExpira: Date,
-  ultimoCodigoEnviado: Date
-}
-```
-
-Roles:
-
-```text
-usuario
-admin
-```
-
----
-
-## Cancha
-
-```js
-{
-  nombre: String,
-  descripcion: String,
-  precio: Number,
-  imagen: String,
-  tipo: String,
-  disponible: Boolean
-}
-```
-
-Tipos:
-
-```text
-Fútbol 5
-Fútbol 7
-Fútbol 11
-```
-
----
-
-## Producto
-
-```js
-{
-  nombreProducto: String,
-  descripcion: String,
-  precio: Number,
-  imagen: String,
-  categoria: ObjectId
-}
-```
-
-La categoría tiene una relación con el modelo:
-
-```text
-categoria
-```
-
----
-
-## Categoría
-
-```js
-{
-  nombreCategoria: String
-}
-```
-
----
-
-## Carrito
-
-```js
-{
-  usuario: ObjectId,
-  items: [
-    {
-      producto: ObjectId,
-      cantidad: Number
-    }
-  ]
-}
-```
-
-Cada usuario posee un único carrito.
-
----
-
-## Reserva
-
-```js
-{
-  usuario: ObjectId,
-  cancha: ObjectId,
-  fecha: Date,
-  horaInicio: String,
-  horaFin: String,
-  precio: Number,
-  estado: String
-}
-```
-
-Estados:
-
-```text
-pendiente
-confirmada
-cancelada
-```
-
----
-
-## Orden
-
-```js
-{
-  usuario: ObjectId,
-  items: [
-    {
-      producto: ObjectId,
-      nombreProducto: String,
-      precioUnitario: Number,
-      cantidad: Number
-    }
-  ],
-  montoTotal: Number,
-  estado: String,
-  preferenceId: String,
-  paymentId: String
-}
-```
-
-Estados:
-
-```text
-pendiente
-aprobada
-rechazada
-cancelada
-```
-
----
-
-# 🔗 Relaciones entre modelos
-
-Las principales relaciones son:
-
-```text
-Usuario
-   │
-   ├──────── Carrito
-   │
-   ├──────── Reserva ──────── Cancha
-   │
-   └──────── Orden ────────── Producto
-                                │
-                                └── Categoría
-```
-
-En MongoDB estas relaciones se realizan mediante `ObjectId` y referencias de Mongoose.
-
----
-
-# 🔑 Variables de entorno
-
-Crear un archivo `.env` en la raíz del proyecto.
+Crear el archivo `.env` en la raíz del proyecto. Completarlo con los valores correspondientes al entorno local o de despliegue.
 
 ```env
 PORT=3003
 
 MONGODB_URI=TU_URI_DE_MONGODB
-
 JWT_SECRET=TU_SECRETO_JWT
 
 MP_ACCESS_TOKEN=TU_ACCESS_TOKEN_DE_MERCADO_PAGO
-
 FRONTEND_URL=http://localhost:5173
-
 BACKEND_URL=http://localhost:3003
 
 ADMIN_PRINCIPAL_ID=ID_DEL_ADMIN_PRINCIPAL
@@ -1345,156 +156,415 @@ CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
 CLOUDINARY_API_KEY=TU_API_KEY
 CLOUDINARY_API_SECRET=TU_API_SECRET
 
-MAILTRAP_HOST=TU_HOST
-MAILTRAP_PORT=TU_PORT
-MAILTRAP_USER=TU_USUARIO
-MAILTRAP_PASS=TU_PASSWORD
+MAILTRAP_HOST=TU_HOST_SMTP
+MAILTRAP_PORT=TU_PUERTO_SMTP
+MAILTRAP_USER=TU_USUARIO_SMTP
+MAILTRAP_PASS=TU_PASSWORD_SMTP
 ```
 
-> ⚠️ Los valores mostrados son ejemplos. No subir credenciales reales al repositorio.
+> Los nombres de las variables deben coincidir con los utilizados por la configuración del proyecto. No subir el archivo `.env` ni credenciales reales al repositorio. En producción, configurar estas variables desde el panel del servicio de hosting.
 
----
+## URL base y rutas
 
-# ▶️ Instalación
-
-Clonar el repositorio:
-
-```bash
-git clone URL_DEL_REPOSITORIO
-```
-
-Ingresar al proyecto:
-
-```bash
-cd backend-alquiler-canchas
-```
-
-Instalar las dependencias:
-
-```bash
-pnpm install
-```
-
-Crear el archivo:
-
-```text
-.env
-```
-
-Configurar las variables de entorno.
-
-Luego ejecutar el proyecto utilizando el script correspondiente definido en `package.json`.
-
----
-
-# 🌐 URL base
-
-En desarrollo:
+En desarrollo local, la URL base de la API es:
 
 ```text
 http://localhost:3003/api
 ```
 
-Por ejemplo:
+Los endpoints que se detallan a continuación se expresan en relación con esa URL base.
 
-```text
-http://localhost:3003/api/canchas
+## Autenticación y autorización
+
+La autenticación utiliza un JWT guardado en una cookie `httpOnly` llamada `token`. El token incluye el identificador del usuario y su rol, y tiene una duración configurada de una hora.
+
+Roles disponibles:
+
+- `usuario`
+- `admin`
+
+Las rutas protegidas requieren autenticación. Las operaciones administrativas requieren, además, el rol `admin`.
+
+### Usuarios
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/usuario/registro` | Público |
+| POST | `/usuario/verificar-email` | Público |
+| POST | `/usuario/reenviar-codigo` | Público |
+| POST | `/usuario/login` | Público |
+| POST | `/usuario/logout` | Público |
+| GET | `/usuario/me` | Autenticado |
+| GET | `/usuario` | Administrador |
+| GET | `/usuario/:id` | Autenticado; propietario o administrador |
+| PUT | `/usuario/:id` | Autenticado; propietario o administrador |
+| DELETE | `/usuario/:id` | Administrador |
+
+**Registro**
+
+`POST /usuario/registro`
+
+Ejemplo de cuerpo:
+
+```json
+{
+  "nombre": "José",
+  "apellido": "Pérez",
+  "email": "jose@example.com",
+  "password": "una-clave-de-ejemplo"
+}
 ```
 
----
+La contraseña se almacena utilizando bcrypt. El usuario debe verificar su correo electrónico antes de iniciar sesión.
 
-# 🔒 Usuarios de prueba
+**Verificación de correo**
 
-> Estas credenciales son utilizadas para realizar pruebas durante el desarrollo. No utilizar estas cuentas para información real.
+`POST /usuario/verificar-email`
 
-### Administrador
-
-```text
-Email: admin@example.com
-Password: 12345678
-Rol: admin
+```json
+{
+  "email": "jose@example.com",
+  "codigo": "123456"
+}
 ```
 
----
+El código tiene seis dígitos, vence a los diez minutos y se elimina luego de utilizarse correctamente. Se permite solicitar otro código respetando el intervalo de reenvío configurado (60 segundos).
 
-# 🔄 Flujo de autenticación
+**Inicio de sesión**
+
+`POST /usuario/login`
+
+```json
+{
+  "email": "jose@example.com",
+  "password": "una-clave-de-ejemplo"
+}
+```
+
+Para iniciar sesión, la cuenta debe existir, estar activa, tener el correo verificado y la contraseña debe ser correcta.
+
+`GET /usuario/me` devuelve los datos del usuario autenticado sin incluir la contraseña.
+
+### Canchas
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/canchas` | Según configuración de la ruta |
+| POST | `/canchas` | Administrador |
+| GET | `/canchas/:id` | Autenticado |
+| PUT | `/canchas/:id` | Administrador |
+| PATCH | `/canchas/:id` | Administrador |
+| DELETE | `/canchas/:id` | Administrador |
+
+**Listado, búsqueda y paginación**
+
+`GET /canchas`
+
+Parámetros de consulta:
+
+- `termino`: texto para buscar por nombre.
+- `pagina`: número de página.
+- `limite`: cantidad de elementos por página.
+
+Ejemplo:
+
+```http
+GET /api/canchas?termino=futbol&pagina=1&limite=8
+```
+
+**Crear cancha**
+
+`POST /canchas`
+
+Requiere `multipart/form-data` y rol administrador. Campos utilizados:
+
+- `nombre`
+- `descripcion`
+- `precio`
+- `tipo`
+- `disponible`
+- `imagen`
+
+Los tipos de cancha contemplados son `Fútbol 5`, `Fútbol 7` y `Fútbol 11`.
+
+### Reservas
+
+Todas las rutas de reservas requieren autenticación.
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/reservas` | Usuario |
+| GET | `/reservas` | Usuario: propias; administrador: todas |
+| GET | `/reservas/disponibilidad/:cancha/:fecha` | Autenticado |
+| GET | `/reservas/:id` | Propietario o administrador |
+| PATCH | `/reservas/:id` | Propietario o administrador, según campos permitidos |
+| DELETE | `/reservas/:id` | Propietario o administrador |
+
+**Crear reserva**
+
+`POST /reservas`
+
+```json
+{
+  "cancha": "ID_DE_LA_CANCHA",
+  "fecha": "AAAA-MM-DD",
+  "horaInicio": "18:00"
+}
+```
+
+El backend calcula la hora de finalización. Cada reserva dura una hora. Se valida que la cancha exista y esté disponible, que la fecha no sea pasada y que el horario no esté ocupado.
+
+**Consultar disponibilidad**
+
+`GET /reservas/disponibilidad/:cancha/:fecha`
+
+Devuelve los horarios y si cada uno está disponible. Los horarios se generan entre las 08:00 y las 23:00.
+
+**Modificar reserva**
+
+`PATCH /reservas/:id`
+
+El usuario puede modificar los datos de su reserva dentro de los campos permitidos. El administrador también puede modificar el estado. Los estados contemplados son:
+
+- `pendiente`
+- `confirmada`
+- `cancelada`
+
+**Cancelar reserva**
+
+`DELETE /reservas/:id`
+
+La cancelación es lógica: la reserva permanece en MongoDB y cambia su estado a `cancelada`.
+
+### Productos
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/producto` | Según configuración de la ruta |
+| POST | `/producto` | Administrador |
+| GET | `/producto/:id` | Público |
+| PUT | `/producto/:id` | Administrador |
+| PATCH | `/producto/:id` | Administrador |
+| DELETE | `/producto/:id` | Administrador |
+
+**Listado, búsqueda y paginación**
+
+`GET /producto`
+
+Parámetros:
+
+- `termino`
+- `pagina`
+- `limite`
+
+Ejemplo:
+
+```http
+GET /api/producto?termino=botin&pagina=1&limite=6
+```
+
+**Crear producto**
+
+`POST /producto`
+
+Requiere `multipart/form-data` y rol administrador. Campos:
+
+- `nombreProducto`
+- `descripcion`
+- `precio`
+- `categoria`
+- `imagen`
+
+La imagen se almacena en Cloudinary. Si no se envía una imagen, se utiliza una imagen predeterminada.
+
+### Categorías
+
+Las consultas de categorías son públicas. Las operaciones de escritura requieren permisos de administrador.
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/categorias` | Público |
+| GET | `/categorias/:id` | Público |
+| POST | `/categorias` | Administrador |
+| PUT | `/categorias/:id` | Administrador |
+| PATCH | `/categorias/:id` | Administrador |
+| DELETE | `/categorias/:id` | Administrador |
+
+Ejemplo para crear una categoría:
+
+```json
+{
+  "nombreCategoria": "Indumentaria deportiva"
+}
+```
+
+### Carrito
+
+Todas las operaciones del carrito requieren autenticación. Cada usuario opera sobre su propio carrito.
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/carrito` | Agrega un producto |
+| GET | `/carrito` | Obtiene el carrito |
+| DELETE | `/carrito` | Vacía el carrito |
+| PATCH | `/carrito/restar/:productoId` | Disminuye una unidad |
+| DELETE | `/carrito/producto/:productoId` | Elimina un producto |
+
+Ejemplo para agregar un producto:
+
+```json
+{
+  "producto": "ID_DEL_PRODUCTO",
+  "cantidad": 2
+}
+```
+
+Si el producto ya está en el carrito, se incrementa su cantidad. Al disminuir la cantidad hasta cero, el producto se quita del carrito.
+
+### Pagos con Mercado Pago
+
+El backend permite generar preferencias de pago para compras de productos y reservas. Las operaciones requieren autenticación.
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/pago/crear-preferencia` | Crea una preferencia para los productos del carrito |
+| POST | `/pago/crear-preferencia-reserva` | Crea una preferencia para una reserva |
+| GET/POST | `/pago/webhook` | Recibe notificaciones de Mercado Pago |
+| GET | `/pago/mis-compras` | Consulta las compras del usuario autenticado |
+
+**Preferencia para productos**
+
+`POST /pago/crear-preferencia`
+
+El backend obtiene el carrito del usuario, verifica que tenga productos, calcula el total, crea una orden pendiente y genera la preferencia de Mercado Pago. La moneda utilizada es ARS.
+
+**Preferencia para una reserva**
+
+`POST /pago/crear-preferencia-reserva`
+
+```json
+{
+  "reservaId": "ID_DE_LA_RESERVA"
+}
+```
+
+La reserva debe existir, pertenecer al usuario autenticado y encontrarse pendiente.
+
+**Webhook**
+
+`/pago/webhook`
+
+Mercado Pago envía notificaciones a este endpoint. El backend consulta la información del pago en Mercado Pago y, cuando corresponde, actualiza la orden o reserva asociada. Para una compra aprobada, la orden se marca como aprobada y se vacía el carrito. Para una reserva aprobada, la reserva se marca como confirmada.
+
+El endpoint debe ser accesible desde Internet para que Mercado Pago pueda enviar notificaciones. La URL configurada en `BACKEND_URL` debe corresponder al backend publicado y utilizarse para construir la URL de notificación.
+
+> Para probar la integración, utilizar credenciales y usuarios de prueba de Mercado Pago. No publicar access tokens, datos de tarjetas ni credenciales de prueba en el repositorio. Consultar la documentación oficial de Mercado Pago para obtener tarjetas y datos de prueba vigentes.
+
+**Mis compras**
+
+`GET /pago/mis-compras`
+
+Devuelve las órdenes del usuario autenticado, ordenadas desde la más reciente hasta la más antigua.
+
+## Servicios externos
+
+### Cloudinary
+
+Se utiliza para almacenar las imágenes de canchas y productos. Las imágenes se reciben mediante Multer y se suben a Cloudinary; la URL segura devuelta por el servicio se guarda en MongoDB.
+
+### Correo electrónico
+
+El envío de códigos de verificación se realiza mediante Nodemailer y un servidor SMTP configurado con variables de entorno. Los datos de conexión deben mantenerse fuera del repositorio.
+
+## Modelos principales
+
+El backend utiliza Mongoose para definir los modelos y sus relaciones mediante referencias `ObjectId`.
+
+- **Usuario:** datos personales, email, contraseña cifrada, rol, estado de la cuenta y datos de verificación de correo.
+- **Cancha:** nombre, descripción, precio, imagen, tipo y disponibilidad.
+- **Reserva:** usuario, cancha, fecha, hora de inicio y finalización, precio y estado. También almacena los identificadores relacionados con la preferencia y el pago cuando corresponde.
+- **Producto:** nombre, descripción, precio, imagen y categoría.
+- **Categoría:** nombre de la categoría.
+- **Carrito:** usuario e ítems con referencia al producto y cantidad.
+- **Orden:** usuario, productos comprados, cantidades, importes, estado e identificadores de Mercado Pago.
+
+## Flujos principales
+
+### Flujo de autenticación
 
 ```text
 Registro
    ↓
-Código de verificación
+Envío del código de verificación
    ↓
-Verificación del email
+Verificación del correo
    ↓
 Inicio de sesión
    ↓
-JWT
-   ↓
-Cookie HTTP-only
+JWT en cookie httpOnly
    ↓
 Acceso a rutas protegidas
 ```
 
----
-
-# 🔄 Flujo de reserva
+### Flujo de reserva
 
 ```text
-Usuario
+Usuario selecciona cancha, fecha y horario
    ↓
-Selecciona cancha
+Consulta de disponibilidad
    ↓
-Selecciona fecha
+Validación de disponibilidad en el backend
    ↓
-Consulta disponibilidad
+Creación de reserva pendiente
    ↓
-Selecciona horario
+Generación de preferencia de Mercado Pago
    ↓
-Backend verifica disponibilidad
+Pago
    ↓
-Crea reserva pendiente
+Notificación mediante webhook
    ↓
-Mercado Pago
-   ↓
-Pago aprobado
-   ↓
-Webhook
-   ↓
-Reserva confirmada
+Verificación del pago y actualización de la reserva
 ```
 
----
-
-# 🔄 Flujo de compra
+### Flujo de compra
 
 ```text
-Usuario
-   ↓
-Agrega productos
+Usuario agrega productos
    ↓
 Carrito
    ↓
-Crear preferencia de Mercado Pago
+Creación de preferencia de Mercado Pago
    ↓
 Orden pendiente
    ↓
 Pago
    ↓
-Webhook
+Notificación mediante webhook
    ↓
-Pago aprobado
+Verificación del pago
    ↓
-Orden aprobada
-   ↓
-Carrito vacío
+Orden aprobada y carrito vacío
 ```
 
----
+## Despliegue
 
-# 👨‍💻 Autores
+El backend puede ejecutarse localmente o desplegarse en un servicio de hosting compatible con Node.js.
 
-**Almaraz Abel**
-**Fátima Alfaro**
-**Ángel Nader**
+Para el entorno publicado:
+
+- Configurar las variables de entorno desde el panel del hosting.
+- Utilizar la URI de MongoDB correspondiente al entorno.
+- Configurar `FRONTEND_URL` con la URL pública del frontend.
+- Configurar `BACKEND_URL` con la URL pública del backend.
+- Configurar las credenciales correspondientes al entorno de Mercado Pago.
+- Verificar que la URL del webhook sea pública y apunte a `/api/pago/webhook`.
+
+No incluir archivos `.env`, tokens, contraseñas ni credenciales privadas en el repositorio.
+
+## Autores
+
+- Almaraz Abel
+- Fátima Alfaro
+- Ángel Nader
 
 Proyecto desarrollado como trabajo grupal para la formación en desarrollo web.
