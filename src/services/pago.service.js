@@ -7,7 +7,6 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
-// CREAR PREFERENCIA DE PAGO
 export const crearPreferenciaPagoService = async (userId) => {
   const carrito = await buscarOcrearCarrito(userId);
   await carrito.populate("items.producto");
@@ -53,13 +52,6 @@ export const crearPreferenciaPagoService = async (userId) => {
 
   const preference = new Preference(client);
 
-  console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-  console.log(
-    "SUCCESS URL:",
-    `${process.env.FRONTEND_URL}/checkout/resultado?status=success`,
-  );
-
-
   const result = await preference.create({
     body: {
       items: itemsMP,
@@ -88,21 +80,12 @@ export const crearPreferenciaPagoService = async (userId) => {
   };
 };
 
-// CREAR PREFERENCIA DE PAGO PARA RESERVA
 export const crearPreferenciaPagoReservaService = async (
   reservaId,
   usuarioId,
 ) => {
-  // Validación defensiva estricta
   const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
   const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3003";
-
-  console.log("--- CONFIGURACIÓN DE URLS PARA MP ---");
-  console.log("FRONTEND_URL:", FRONTEND_URL);
-  console.log(
-    "SUCCESS URL:",
-    `${FRONTEND_URL}/checkout/resultado-cancha?status=success`,
-  );
 
   const reserva = await Reserva.findById(reservaId).populate(
     "cancha",
@@ -138,7 +121,6 @@ export const crearPreferenciaPagoReservaService = async (
 
   const preference = new Preference(client);
 
-  // Única llamada correcta utilizando la estructura estándar del SDK v3.x
   const result = await preference.create({
     body: {
       items: [
@@ -179,7 +161,6 @@ export const crearPreferenciaPagoReservaService = async (
   };
 };
 
-// RECIBIR WEBHOOK
 export const recibirWebhookService = async (query, body) => {
   console.log("🚨 Webhook de Mercado Pago recibido");
 
@@ -226,14 +207,12 @@ export const recibirWebhookService = async (query, body) => {
   const montoPagado = pagoData.transaction_amount;
   const monedaPagada = pagoData.currency_id;
 
-  // 1️⃣ Intentar procesar como RESERVA
   const reserva = await Reserva.findById(externalReference).populate(
     "cancha",
     "precio",
   );
 
   if (reserva) {
-    // 🔒 IDEMPOTENCIA: Si ya está confirmada, no procesar de nuevo
     if (reserva.estado === "confirmada") {
       console.log(
         "ℹ️ La reserva ya estaba confirmada previamente (Idempotencia).",
@@ -241,7 +220,6 @@ export const recibirWebhookService = async (query, body) => {
       return { sendStatus: 200 };
     }
 
-    // 🛡️ VALIDACIÓN INTEGRAL: Verificar importe y moneda
     if (
       Number(montoPagado) !== Number(reserva.precio) ||
       monedaPagada !== "ARS"
@@ -269,18 +247,14 @@ export const recibirWebhookService = async (query, body) => {
     );
     return { sendStatus: 200 };
   }
-
-  // 2️⃣ Si no es reserva, intentar procesar como ORDEN (Carrito)
   const orden = await Orden.findById(externalReference);
 
   if (orden) {
-    // 🔒 IDEMPOTENCIA: Si la orden ya está aprobada
     if (orden.estado === "aprobada") {
       console.log("ℹ️ La orden ya estaba aprobada previamente (Idempotencia).");
       return { sendStatus: 200 };
     }
 
-    // 🛡️ VALIDACIÓN INTEGRAL: Verificar importe y moneda
     if (
       Number(montoPagado) !== Number(orden.montoTotal) ||
       monedaPagada !== "ARS"
@@ -319,7 +293,6 @@ export const recibirWebhookService = async (query, body) => {
   return { sendStatus: 200 };
 };
 
-// OBTENER MIS COMPRAS
 export const obtenerMisComprasService = async (usuarioId) => {
   const ordenes = await Orden.find({
     usuario: usuarioId,

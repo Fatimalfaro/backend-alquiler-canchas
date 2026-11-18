@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { enviarCodigoVerificacion } from "./email.service.js";
 
-// REGISTRAR USUARIO
 export const registrarUsuarioService = async (datos) => {
   const { nombre, apellido, email, password } = datos;
 
@@ -89,7 +88,6 @@ export const registrarUsuarioService = async (datos) => {
   };
 };
 
-// VERIFICAR EMAIL
 export const verificarEmailService = async (datos) => {
   const { email, codigo } = datos;
 
@@ -170,7 +168,6 @@ export const verificarEmailService = async (datos) => {
   };
 };
 
-// REENVIAR CODIGO DE VERIFICACION
 export const reenviarCodigoVerificacionService = async (datos) => {
   const { email } = datos;
 
@@ -245,7 +242,6 @@ export const reenviarCodigoVerificacionService = async (datos) => {
   };
 };
 
-// INICIAR SESION
 export const iniciarSesionService = async (datos) => {
   const { email, password } = datos;
 
@@ -330,7 +326,6 @@ export const iniciarSesionService = async (datos) => {
   };
 };
 
-// OBTENER USUARIO ACTUAL
 export const obtenerUsuarioActualService = async (usuarioId) => {
   const usuario = await Usuario.findById(usuarioId).select("-password");
 
@@ -351,7 +346,6 @@ export const obtenerUsuarioActualService = async (usuarioId) => {
   };
 };
 
-// OBTENER TODOS LOS USUARIOS
 export const obtenerUsuariosService = async (queryParams) => {
   const numeroPagina = parseInt(queryParams.pagina) || 1;
   const cantUsuarios = parseInt(queryParams.limite) || 6;
@@ -378,7 +372,6 @@ export const obtenerUsuariosService = async (queryParams) => {
   };
 };
 
-// OBTENER USUARIO POR ID
 export const obtenerUsuarioPorIdService = async (id, usuarioAutenticado) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return {
@@ -415,7 +408,6 @@ export const obtenerUsuarioPorIdService = async (id, usuarioAutenticado) => {
   };
 };
 
-// ACTUALIZAR USUARIO
 export const actualizarUsuarioService = async (
   id,
   datos,
@@ -571,7 +563,6 @@ export const actualizarUsuarioService = async (
   };
 };
 
-// ELIMINAR USUARIO
 export const eliminarUsuarioService = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return {

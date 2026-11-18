@@ -1,7 +1,6 @@
 import Reserva from "../models/reserva.js";
 import Cancha from "../models/cancha.js";
 
-// CREAR RESERVA
 export const crearReservaService = async (datos, usuario) => {
   const { cancha, fecha, horaInicio } = datos;
 
@@ -25,7 +24,6 @@ export const crearReservaService = async (datos, usuario) => {
     };
   }
 
-  // Calcular automáticamente la hora de finalización
   const [hora, minutos] = horaInicio.split(":").map(Number);
   let horaFin;
 
@@ -97,7 +95,6 @@ export const crearReservaService = async (datos, usuario) => {
   };
 };
 
-// LISTAR RESERVAS
 export const listarReservasService = async (queryParams, usuario) => {
   const numeroPagina = parseInt(queryParams.pagina) || 1;
   const cantReservas = parseInt(queryParams.limite) || 6;
@@ -128,7 +125,6 @@ export const listarReservasService = async (queryParams, usuario) => {
   };
 };
 
-// BUSCAR RESERVA POR ID
 export const buscarReservaPorIDService = async (id, usuario) => {
   const reserva = await Reserva.findById(id)
     .populate("usuario", "nombre apellido email")
@@ -163,7 +159,6 @@ export const buscarReservaPorIDService = async (id, usuario) => {
   };
 };
 
-// EDITAR RESERVA POR ID
 export const editarReservaPorIDService = async (id, datos, usuario) => {
   const userRole = usuario.rol;
 
@@ -178,7 +173,6 @@ export const editarReservaPorIDService = async (id, datos, usuario) => {
     };
   }
 
-  // Verificar si es admin o si la reserva pertenece al usuario
   if (
     userRole !== "admin" &&
     reserva.usuario.toString() !== usuario.id.toString()
@@ -191,13 +185,11 @@ export const editarReservaPorIDService = async (id, datos, usuario) => {
     };
   }
 
-  // 1. Explicitar campos permitidos según el rol
   const camposPermitidosAdmin = ["estado", "cancha", "fecha", "horaInicio"];
   const camposPermitidosUsuario = ["cancha", "fecha", "horaInicio"];
   const camposPermitidos =
     userRole === "admin" ? camposPermitidosAdmin : camposPermitidosUsuario;
 
-  // 2. Rechazar campos no permitidos o si un usuario intenta enviar 'estado'
   const camposEnviados = Object.keys(datos);
   const camposInvalidos = camposEnviados.filter(
     (campo) => !camposPermitidos.includes(campo),
@@ -217,7 +209,6 @@ export const editarReservaPorIDService = async (id, datos, usuario) => {
     };
   }
 
-  // Si es admin y actualiza el estado
   if (userRole === "admin" && datos.estado) {
     const estadosPermitidos = ["pendiente", "confirmada", "cancelada"];
 
@@ -232,7 +223,6 @@ export const editarReservaPorIDService = async (id, datos, usuario) => {
 
     reserva.estado = datos.estado;
 
-    // Si solo mandó estado, guardamos y retornamos directamente
     if (!datos.cancha && !datos.fecha && !datos.horaInicio) {
       await reserva.save();
 
@@ -347,7 +337,6 @@ export const editarReservaPorIDService = async (id, datos, usuario) => {
   };
 };
 
-// BORRAR RESERVA POR ID
 export const borrarReservaPorIDService = async (id, usuario) => {
   const reserva = await Reserva.findById(id);
 
@@ -385,7 +374,6 @@ export const borrarReservaPorIDService = async (id, usuario) => {
   };
 };
 
-// OBTENER DISPONIBILIDAD
 export const obtenerDisponibilidadService = async (cancha, fecha) => {
   const canchaEncontrada = await Cancha.findById(cancha);
 

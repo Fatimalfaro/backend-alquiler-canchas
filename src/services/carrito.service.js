@@ -1,7 +1,6 @@
 import Producto from "../models/producto.js";
 import buscarOcrearCarrito from "../utils/buscarOcrearCarrito.js";
 
-// AGREGAR AL CARRITO
 export const agregarAlCarritoService = async (datos, usuarioId) => {
   const { producto, cantidad } = datos;
 
@@ -36,7 +35,6 @@ export const agregarAlCarritoService = async (datos, usuarioId) => {
   return carrito;
 };
 
-// OBTENER CARRITO
 export const obtenerCarritoService = async (usuarioId) => {
   const carrito = await buscarOcrearCarrito(usuarioId);
 
@@ -48,7 +46,6 @@ export const obtenerCarritoService = async (usuarioId) => {
   return carrito;
 };
 
-// VACIAR CARRITO
 export const vaciarCarritoService = async (usuarioId) => {
   const carrito = await buscarOcrearCarrito(usuarioId);
 
@@ -59,7 +56,6 @@ export const vaciarCarritoService = async (usuarioId) => {
   return carrito;
 };
 
-// RESTAR CANTIDAD DE PRODUCTO
 export const restarCantidadProductoService = async (usuarioId, productoId) => {
   const carrito = await buscarOcrearCarrito(usuarioId);
 
@@ -87,7 +83,6 @@ export const restarCantidadProductoService = async (usuarioId, productoId) => {
   return carrito;
 };
 
-// ELIMINAR PRODUCTO DEL CARRITO
 export const eliminarProductoCarritoService = async (usuarioId, productoId) => {
   const carrito = await buscarOcrearCarrito(usuarioId);
 

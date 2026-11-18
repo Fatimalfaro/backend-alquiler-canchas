@@ -7,7 +7,6 @@ import {
   listarTodasLasCategoriasService,
 } from "../services/categoria.service.js";
 
-// CREAR CATEGORIA
 export const crearCategoria = async (req, res, next) => {
   try {
     await crearCategoriaService(req.body);
@@ -20,7 +19,6 @@ export const crearCategoria = async (req, res, next) => {
   }
 };
 
-// LISTAR CATEGORIAS
 export const listarCategorias = async (req, res, next) => {
   try {
     const resultado = await listarCategoriasService(req.query);
@@ -31,7 +29,6 @@ export const listarCategorias = async (req, res, next) => {
   }
 };
 
-// BUSCAR CATEGORIA POR ID
 export const buscarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaBuscada = await buscarCategoriaPorIDService(
@@ -54,7 +51,6 @@ export const buscarCategoriaPorID = async (req, res, next) => {
   }
 };
 
-// BORRAR CATEGORIA POR ID
 export const borrarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaBorrada = await borrarCategoriaPorIDService(
@@ -79,7 +75,6 @@ export const borrarCategoriaPorID = async (req, res, next) => {
   }
 };
 
-// EDITAR CATEGORIA POR ID
 export const editarCategoriaPorID = async (req, res, next) => {
   try {
     const categoriaEditada = await editarCategoriaPorIDService(
@@ -103,8 +98,6 @@ export const editarCategoriaPorID = async (req, res, next) => {
   }
 };
 
-
-// LISTAR TODAS LAS CATEGORÍAS
 export const listarTodasLasCategorias = async (req, res, next) => {
   try {
     const categorias = await listarTodasLasCategoriasService();

@@ -1,6 +1,5 @@
 import Categoria from "../models/categoria.js";
 
-// CREAR CATEGORIA
 export const crearCategoriaService = async (datos) => {
   const nuevaCategoria = new Categoria(datos);
   await nuevaCategoria.save();
@@ -8,7 +7,6 @@ export const crearCategoriaService = async (datos) => {
   return nuevaCategoria;
 };
 
-// LISTAR CATEGORIAS
 export const listarCategoriasService = async (queryParams) => {
   const page = parseInt(queryParams.page) || 1;
 
@@ -36,14 +34,12 @@ export const listarCategoriasService = async (queryParams) => {
   };
 };
 
-// BUSCAR CATEGORIA POR ID
 export const buscarCategoriaPorIDService = async (id) => {
   const categoriaBuscada = await Categoria.findById(id);
 
   return categoriaBuscada;
 };
 
-// BORRAR CATEGORIA POR ID
 export const borrarCategoriaPorIDService = async (id) => {
   const categoriaBorrada = await Categoria.findByIdAndUpdate(
     id,
@@ -54,7 +50,6 @@ export const borrarCategoriaPorIDService = async (id) => {
   return categoriaBorrada;
 };
 
-// EDITAR CATEGORIA POR ID
 export const editarCategoriaPorIDService = async (id, datos) => {
   const categoriaEditada = await Categoria.findByIdAndUpdate(
     id,
@@ -65,7 +60,6 @@ export const editarCategoriaPorIDService = async (id, datos) => {
   return categoriaEditada;
 };
 
-// LISTAR TODAS LAS CATEGORÍAS ACTIVAS
 export const listarTodasLasCategoriasService = async () => {
   return await Categoria.find({ activo: true });
 };

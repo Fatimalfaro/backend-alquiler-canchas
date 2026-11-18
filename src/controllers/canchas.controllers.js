@@ -6,7 +6,6 @@ import {
   editarCanchaPorIDService,
 } from "../services/cancha.service.js";
 
-// AGREGAR CANCHA
 export const agregarCancha = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -26,7 +25,6 @@ export const agregarCancha = async (req, res, next) => {
   }
 };
 
-// LISTAR CANCHAS
 export const listarCanchas = async (req, res, next) => {
   try {
     const resultado = await listarCanchasService(req.query);
@@ -37,8 +35,6 @@ export const listarCanchas = async (req, res, next) => {
   }
 };
   
-
-// BUSCAR CANCHA POR ID
 export const buscarCanchaPorID = async (req, res, next) => {
   try {
     const canchaBuscada = await buscarCanchaPorIDService(req.params.id);
@@ -55,7 +51,6 @@ export const buscarCanchaPorID = async (req, res, next) => {
   }
 };
 
-// BORRAR CANCHA POR ID
 export const borrarCanchaPorID = async (req, res, next) => {
   try {
     const canchaBorrada = await borrarCanchaPorIDService(req.params.id);
@@ -74,7 +69,6 @@ export const borrarCanchaPorID = async (req, res, next) => {
   }
 };
 
-// EDITAR CANCHA POR ID
 export const editarCanchaPorID = async (req, res, next) => {
   try {
     const cancha = await editarCanchaPorIDService(

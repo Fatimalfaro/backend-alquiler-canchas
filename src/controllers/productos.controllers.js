@@ -6,7 +6,6 @@ import {
   editarProductoPorIDService,
 } from "../services/producto.service.js";
 
-// Función auxiliar para enviar los errores al middleware global
 const enviarError = (next, statusCode, mensaje) => {
   const error = new Error(mensaje);
   error.statusCode = statusCode;
@@ -14,7 +13,6 @@ const enviarError = (next, statusCode, mensaje) => {
   return next(error);
 };
 
-// AGREGAR PRODUCTO
 export const agregarProducto = async (req, res, next) => {
   try {
     const producto = await agregarProductoService(req.body, req.file);
@@ -35,7 +33,6 @@ export const agregarProducto = async (req, res, next) => {
   }
 };
 
-// LISTAR PRODUCTOS
 export const listarProductos = async (req, res, next) => {
   try {
     const resultado = await listarProductosService(req.query);
@@ -46,7 +43,6 @@ export const listarProductos = async (req, res, next) => {
   }
 };
 
-// BUSCAR PRODUCTO POR ID
 export const buscarProductoPorID = async (req, res, next) => {
   try {
     const productoBuscado = await buscarProductoPorIDService(req.params.id);
@@ -65,7 +61,6 @@ export const buscarProductoPorID = async (req, res, next) => {
   }
 };
 
-// BORRAR PRODUCTO POR ID
 export const borrarProductoPorID = async (req, res, next) => {
   try {
     const productoBorrado = await borrarProductoPorIDService(req.params.id);
@@ -86,7 +81,6 @@ export const borrarProductoPorID = async (req, res, next) => {
   }
 };
 
-// EDITAR PRODUCTO POR ID
 export const editarProductoPorID = async (req, res, next) => {
   try {
     const productoEditado = await editarProductoPorIDService(

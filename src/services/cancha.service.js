@@ -1,7 +1,6 @@
 import Cancha from "../models/cancha.js";
 import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
 
-// AGREGAR CANCHA
 export const agregarCanchaService = async (datos, archivo) => {
   const datosCancha = {
     ...datos,
@@ -18,7 +17,6 @@ export const agregarCanchaService = async (datos, archivo) => {
   return cancha;
 };
 
-// LISTAR CANCHAS
 export const listarCanchasService = async (queryParams) => {
   const { termino } = queryParams;
 
@@ -48,14 +46,12 @@ export const listarCanchasService = async (queryParams) => {
   };
 };
 
-// BUSCAR CANCHA POR ID
 export const buscarCanchaPorIDService = async (id) => {
   const canchaBuscada = await Cancha.findById(id);
 
   return canchaBuscada;
 };
 
-// BORRAR CANCHA POR ID
 export const borrarCanchaPorIDService = async (id) => {
   const canchaBorrada = await Cancha.findByIdAndUpdate(
     id,
@@ -69,7 +65,6 @@ export const borrarCanchaPorIDService = async (id) => {
   return canchaBorrada;
 };
 
-// EDITAR CANCHA POR ID
 export const editarCanchaPorIDService = async (id, datos, archivo) => {
   const cancha = await Cancha.findById(id);
 

@@ -7,7 +7,6 @@ import {
   obtenerDisponibilidadService,
 } from "../services/reserva.service.js";
 
-// CREAR RESERVA
 export const crearReserva = async (req, res, next) => {
   try {
     const { cancha, fecha, horaInicio } = req.body;
@@ -32,7 +31,6 @@ export const crearReserva = async (req, res, next) => {
   }
 };
 
-// LISTAR RESERVAS
 export const listarReservas = async (req, res, next) => {
   try {
     const resultado = await listarReservasService(req.query, req.usuario);
@@ -43,7 +41,6 @@ export const listarReservas = async (req, res, next) => {
   }
 };
 
-// BUSCAR RESERVA POR ID
 export const buscarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -56,7 +53,6 @@ export const buscarReservaPorID = async (req, res, next) => {
   }
 };
 
-// EDITAR RESERVA POR ID
 export const editarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -73,7 +69,6 @@ export const editarReservaPorID = async (req, res, next) => {
   }
 };
 
-// BORRAR RESERVA POR ID
 export const borrarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -86,7 +81,6 @@ export const borrarReservaPorID = async (req, res, next) => {
   }
 };
 
-// OBTENER DISPONIBILIDAD
 export const obtenerDisponibilidad = async (req, res, next) => {
   try {
     const { cancha, fecha } = req.params;

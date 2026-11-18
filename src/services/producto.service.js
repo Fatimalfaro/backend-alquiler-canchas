@@ -1,7 +1,6 @@
 import Producto from "../models/producto.js";
 import subirImagenACloudinary from "../utils/cloudinaryUploader.js";
 
-// AGREGAR PRODUCTO
 export const agregarProductoService = async (datos, archivo) => {
   const productoExistente = await Producto.findOne({
     nombreProducto: datos.nombreProducto.trim(),
@@ -34,7 +33,6 @@ export const agregarProductoService = async (datos, archivo) => {
   return producto;
 };
 
-// LISTAR PRODUCTOS
 export const listarProductosService = async (queryParams) => {
   const { termino, pagina, limite } = queryParams;
   const numeroPagina = parseInt(pagina);
@@ -58,19 +56,16 @@ export const listarProductosService = async (queryParams) => {
   return { productos, cantidadProductos };
 };
 
-// BUSCAR PRODUCTO POR ID
 export const buscarProductoPorIDService = async (id) => {
   const productoBuscado = await Producto.findById(id);
   return productoBuscado;
 };
 
-// BORRAR PRODUCTO POR ID
 export const borrarProductoPorIDService = async (id) => {
   const productoBorrado = await Producto.findByIdAndDelete(id);
   return productoBorrado;
 };
 
-// EDITAR PRODUCTO POR ID
 export const editarProductoPorIDService = async (id, datos, archivo) => {
   const productoExistente = await Producto.findById(id);
 

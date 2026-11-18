@@ -5,7 +5,6 @@ import {
   obtenerMisComprasService,
 } from "../services/pago.service.js";
 
-// CREAR PREFERENCIA DE PAGO
 export const crearPreferenciaPago = async (req, res, next) => {
   try {
     const userId = req.usuario.id;
@@ -18,7 +17,6 @@ export const crearPreferenciaPago = async (req, res, next) => {
   }
 };
 
-// CREAR PREFERENCIA DE PAGO PARA RESERVA
 export const crearPreferenciaPagoReserva = async (req, res, next) => {
   try {
     const { reservaId } = req.body;
@@ -35,7 +33,6 @@ export const crearPreferenciaPagoReserva = async (req, res, next) => {
   }
 };
 
-// RECIBIR WEBHOOK
 export const recibirWebhook = async (req, res, next) => {
   try {
     const resultado = await recibirWebhookService(req.query, req.body);
@@ -50,7 +47,6 @@ export const recibirWebhook = async (req, res, next) => {
   }
 };
 
-// OBTENER MIS COMPRAS
 export const obtenerMisCompras = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;

@@ -1,4 +1,3 @@
-
 import {
   registrarUsuarioService,
   verificarEmailService,
@@ -11,7 +10,6 @@ import {
   eliminarUsuarioService,
 } from "../services/usuario.service.js";
 
-// Derivar errores controlados al manejador global
 const responderResultado = (resultado, res, next) => {
   if (resultado.status >= 400) {
     const error = new Error(
@@ -27,7 +25,6 @@ const responderResultado = (resultado, res, next) => {
   return res.status(resultado.status).json(resultado.respuesta);
 };
 
-// REGISTRAR USUARIO
 export const registrarUsuario = async (req, res, next) => {
   try {
     const resultado = await registrarUsuarioService(req.body);
@@ -38,7 +35,6 @@ export const registrarUsuario = async (req, res, next) => {
   }
 };
 
-// VERIFICAR EMAIL
 export const verificarEmail = async (req, res, next) => {
   try {
     const resultado = await verificarEmailService(req.body);
@@ -49,7 +45,6 @@ export const verificarEmail = async (req, res, next) => {
   }
 };
 
-// REENVIAR CODIGO DE VERIFICACION
 export const reenviarCodigoVerificacion = async (req, res, next) => {
   try {
     const resultado = await reenviarCodigoVerificacionService(req.body);
@@ -60,7 +55,6 @@ export const reenviarCodigoVerificacion = async (req, res, next) => {
   }
 };
 
-// INICIAR SESION
 export const iniciarSesion = async (req, res, next) => {
   try {
     const resultado = await iniciarSesionService(req.body);
@@ -81,7 +75,6 @@ export const iniciarSesion = async (req, res, next) => {
   }
 };
 
-// OBTENER USUARIO ACTUAL
 export const obtenerUsuarioActual = async (req, res, next) => {
   try {
     const resultado = await obtenerUsuarioActualService(
@@ -94,7 +87,6 @@ export const obtenerUsuarioActual = async (req, res, next) => {
   }
 };
 
-// OBTENER TODOS LOS USUARIOS
 export const obtenerUsuarios = async (req, res, next) => {
   try {
     const resultado = await obtenerUsuariosService(req.query);
@@ -121,7 +113,6 @@ export const obtenerUsuarioPorId = async (req, res, next) => {
   }
 };
 
-// ACTUALIZAR USUARIO
 export const actualizarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -138,7 +129,6 @@ export const actualizarUsuario = async (req, res, next) => {
   }
 };
 
-// ELIMINAR USUARIO
 export const eliminarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -151,7 +141,6 @@ export const eliminarUsuario = async (req, res, next) => {
   }
 };
 
-// CERRAR SESION
 export const cerrarSesion = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,

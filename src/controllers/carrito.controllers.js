@@ -6,7 +6,6 @@ import {
   eliminarProductoCarritoService,
 } from "../services/carrito.service.js";
 
-// AGREGAR AL CARRITO
 export const agregarAlCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
@@ -27,7 +26,6 @@ export const agregarAlCarrito = async (req, res, next) => {
     }
   };
 
-// OBTENER CARRITO
 export const obtenerCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
@@ -40,8 +38,6 @@ export const obtenerCarrito = async (req, res, next) => {
   }
 };
 
-
-// VACIAR CARRITO
 export const vaciarCarrito = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
@@ -54,7 +50,6 @@ export const vaciarCarrito = async (req, res, next) => {
   }
 };
 
-// RESTAR CANTIDAD DE PRODUCTO
 export const restarCantidadProducto = async (req, res, next) => {
   try {
     const usuarioId = req.usuario.id;
@@ -76,7 +71,6 @@ export const restarCantidadProducto = async (req, res, next) => {
   }
 };
 
-// ELIMINAR PRODUCTO DEL CARRITO
 export const eliminarProductoCarrito = async (req, res, next) => {
   try {
     const { productoId } = req.params;
