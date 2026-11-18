@@ -8,7 +8,7 @@ import {
 } from "../services/reserva.service.js";
 
 // CREAR RESERVA
-export const crearReserva = async (req, res) => {
+export const crearReserva = async (req, res, next) => {
   try {
     const { cancha, fecha, horaInicio } = req.body;
     const usuario = req.usuario.id;
@@ -28,31 +28,23 @@ export const crearReserva = async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
-      message: "Error al procesar la reserva",
-      error: error.message,
-    });
+   return next(error);
   }
 };
 
 // LISTAR RESERVAS
-export const listarReservas = async (req, res) => {
+export const listarReservas = async (req, res, next) => {
   try {
     const resultado = await listarReservasService(req.query, req.usuario);
 
     res.status(200).json(resultado);
   } catch (error) {
-    console.error("Error al listar reservas:", error);
-
-    res.status(500).json({
-      mensaje: "Ocurrió un error al listar las reservas",
-    });
+    return next(error);
   }
 };
 
 // BUSCAR RESERVA POR ID
-export const buscarReservaPorID = async (req, res) => {
+export const buscarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -60,16 +52,12 @@ export const buscarReservaPorID = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al buscar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al buscar la reserva",
-    });
+    return next(error);
   }
 };
 
 // EDITAR RESERVA POR ID
-export const editarReservaPorID = async (req, res) => {
+export const editarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -81,16 +69,12 @@ export const editarReservaPorID = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al editar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al editar la reserva",
-    });
+    return next(error);
   }
 };
 
 // BORRAR RESERVA POR ID
-export const borrarReservaPorID = async (req, res) => {
+export const borrarReservaPorID = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -98,16 +82,12 @@ export const borrarReservaPorID = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al cancelar reserva:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al cancelar la reserva",
-    });
+    return next(error);
   }
 };
 
 // OBTENER DISPONIBILIDAD
-export const obtenerDisponibilidad = async (req, res) => {
+export const obtenerDisponibilidad = async (req, res, next) => {
   try {
     const { cancha, fecha } = req.params;
 
@@ -115,10 +95,6 @@ export const obtenerDisponibilidad = async (req, res) => {
 
     return res.status(resultado.status).json(resultado.respuesta);
   } catch (error) {
-    console.error("Error al obtener disponibilidad:", error);
-
-    return res.status(500).json({
-      mensaje: "Ocurrió un error al obtener la disponibilidad",
-    });
+    return next(error);
   }
 };
